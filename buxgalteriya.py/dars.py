@@ -1,29 +1,57 @@
+# -*- coding: utf-8 -*-
 # ============================================================
-#  ☁️ MAKTAB BUXGALTERIYA — PREMIUM DIZAYN (Python/Streamlit)
+#  ☁️ MAKTAB BUXGALTERIYA — PRO versiya (Python / Streamlit)
 # ============================================================
-
+import hashlib
+import hmac
+import html
 import io
-from datetime import datetime
+import json
+import re
+import secrets
+import time
+from datetime import date, datetime
 
 import pandas as pd
 import requests
 import streamlit as st
 
-DB_URL = "https://maktab-buxgalteriya-default-rtdb.firebaseio.com"
+# ------------------------------------------------------------
+# SOZLAMALAR
+# ------------------------------------------------------------
+def _secret(kalit, standart=""):
+    try:
+        return st.secrets.get(kalit, standart)
+    except Exception:
+        return standart
+
+
+DB_URL = str(_secret("DB_URL", "https://maktab-buxgalteriya-default-rtdb.firebaseio.com")).rstrip("/")
+DB_AUTH = str(_secret("DB_AUTH", ""))  # Firebase database secret / token (ixtiyoriy)
+
 OYLAR = ["Yanvar", "Fevral", "Mart", "Aprel", "May", "Iyun",
          "Iyul", "Avgust", "Sentabr", "Oktabr", "Noyabr", "Dekabr"]
-STANDART = {"user": "admin", "pass": "123", "user2": "", "pass2": "",
-            "orgName": "Maktab", "phone": "+998", "tgToken": "", "chatId": "",
+HOLATLAR = {"st-paid": "TO'LANDI", "st-partial": "QISMAN", "st-debt": "QARZ"}
+STANDART = {"user": "admin", "pass": "123", "user2": "", "pass2": "", "role2": "view",
+            "orgName": "Maktab", "phone": "", "tgToken": "", "chatId": "",
             "defaultPrice": 0, "monthlyPlan": 0}
+MIN_PAROL = 6
 
 st.set_page_config(page_title="Maktab Buxgalteriya", page_icon="☁️", layout="wide")
 
-# ================== PREMIUM DIZAYN (CSS) ==================
+# Streamlit versiyasiga moslashuvchi "to'liq kenglik" parametri
+try:
+    _v = tuple(int(x) for x in re.findall(r"\d+", st.__version__)[:2])
+except Exception:
+    _v = (1, 0)
+KENG = {"width": "stretch"} if _v >= (1, 50) else {"use_container_width": True}
+
+# ------------------------------------------------------------
+# DIZAYN (CSS)
+# ------------------------------------------------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap');
-
-    /* Umumiy fon va shrift */
     .stApp { background: #0b1120; font-family: 'Plus Jakarta Sans', sans-serif; }
     section[data-testid="stSidebar"] {
         background: linear-gradient(180deg, #111a2e 0%, #0b1120 100%);
@@ -31,11 +59,11 @@ st.markdown("""
     }
     section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
 
-    /* Streamlit standart elementlarini yashirish */
-    #MainMenu, footer, header { visibility: hidden; }
+    /* Menyu va footer yashirinadi, lekin sidebar tugmasi (header) saqlanadi */
+    #MainMenu, footer, .stDeployButton { visibility: hidden; }
+    header[data-testid="stHeader"] { background: transparent; }
     .block-container { padding-top: 1.2rem; max-width: 1300px; }
 
-    /* Gradient banner */
     .hero {
         background: linear-gradient(135deg, #4f46e5, #7c3aed 60%, #9333ea);
         border-radius: 22px; padding: 26px 30px; color: #fff;
@@ -44,10 +72,9 @@ st.markdown("""
     }
     .hero::after { content:''; position:absolute; right:-50px; top:-60px;
         width:220px; height:220px; background:rgba(255,255,255,.12); border-radius:50%; }
-    .hero h1 { margin:0; font-size:26px; font-weight:800; }
+    .hero h1 { margin:0; font-size:26px; font-weight:800; color:#fff !important; }
     .hero p { margin:6px 0 0; opacity:.85; font-size:14px; }
 
-    /* Statistika kartalar */
     .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
         gap:12px; margin:16px 0; }
     .stat-card {
@@ -60,17 +87,17 @@ st.markdown("""
     .stat-card .lbl { font-size:12px; color:#94a3b8; font-weight:600; }
     .stat-card .val { font-size:22px; font-weight:800; color:#f1f5f9; margin-top:4px; }
 
-    /* Tugmalar */
-    .stButton > button {
+    .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
         border-radius: 12px; font-weight: 700; border: 1px solid #253048;
         background: #151e31; color: #f1f5f9; transition: .2s;
     }
-    .stButton > button:hover { transform: translateY(-2px); border-color:#6366f1; }
-    .stButton > button[kind="primary"] {
+    .stButton > button:hover, .stDownloadButton > button:hover {
+        transform: translateY(-2px); border-color:#6366f1;
+    }
+    .stButton > button[kind="primary"], .stFormSubmitButton > button[kind="primary"],
+    .stFormSubmitButton > button[kind="primaryFormSubmit"] {
         background: linear-gradient(135deg,#6366f1,#8b5cf6); border: none; color:#fff;
     }
-
-    /* Inputlar va jadvallar */
     .stTextInput input, .stNumberInput input, .stDateInput input {
         background: #101828 !important; border: 1px solid #253048 !important;
         border-radius: 12px !important; color: #f1f5f9 !important;
@@ -82,6 +109,7 @@ st.markdown("""
         background: linear-gradient(145deg,#151e31,#101828);
         border: 1px solid #253048; border-radius: 16px; padding: 14px 18px;
     }
+    div[data-testid="stForm"] { border: 1px solid #253048; border-radius: 16px; background:#0f1626; }
     .stTabs [data-baseweb="tab-list"] { gap: 6px; }
     .stTabs [data-baseweb="tab"] {
         border-radius: 12px; background:#151e31; border:1px solid #253048;
@@ -91,250 +119,627 @@ st.markdown("""
         background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff !important;
     }
     h1, h2, h3 { color: #f1f5f9 !important; font-weight: 800 !important; }
-    .stInfo, .stSuccess, .stWarning, .stError { border-radius: 14px; }
+    @media (max-width: 640px) {
+        .hero { padding: 18px 18px; border-radius: 18px; }
+        .hero h1 { font-size: 20px; }
+        .stat-card .val { font-size: 18px; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
-# ================== FIREBASE ==================
+
+# ------------------------------------------------------------
+# FIREBASE
+# ------------------------------------------------------------
+def _params():
+    return {"auth": DB_AUTH} if DB_AUTH else {}
+
 
 def fb_get(yol):
+    """Xatolikda exception ko'taradi (None = ma'lumot yo'q)."""
+    r = requests.get(f"{DB_URL}/{yol}.json", params=_params(), timeout=10)
+    r.raise_for_status()
+    return r.json()
+
+
+@st.cache_data(ttl=45, show_spinner=False)
+def _kesh_oqi(yol):
+    return fb_get(yol)
+
+
+def oqi(yol, yangi=False):
+    """Xavfsiz o'qish: ulanish xatosida sahifa to'xtaydi (ma'lumot ustiga yozib yubormaslik uchun)."""
     try:
-        r = requests.get(f"{DB_URL}/{yol}.json", timeout=10)
-        return r.json() if r.status_code == 200 else None
+        return fb_get(yol) if yangi else _kesh_oqi(yol)
     except Exception:
-        return None
+        st.error("☁️ Bulutga ulanib bo'lmadi. Internetni tekshiring va «🔄 Bulutdan yangilash»ni bosing.")
+        st.stop()
+
 
 def fb_put(yol, qiymat):
     try:
-        r = requests.put(f"{DB_URL}/{yol}.json", json=qiymat, timeout=10)
-        return r.status_code == 200
-    except Exception:
-        return False
+        r = requests.put(f"{DB_URL}/{yol}.json", params=_params(), json=qiymat, timeout=10)
+        ok = r.status_code == 200
+    except requests.RequestException:
+        ok = False
+    if ok:
+        _kesh_oqi.clear()
+    return ok
+
+
+# ------------------------------------------------------------
+# YORDAMCHI FUNKSIYALAR
+# ------------------------------------------------------------
+def num(x, d=0.0):
+    try:
+        if x is None or x == "":
+            return d
+        v = float(str(x).replace(" ", "").replace(",", ""))
+        return d if v != v else v  # NaN himoyasi
+    except (ValueError, TypeError):
+        return d
+
+
+def fmt(x):
+    return f"{int(round(num(x))):,}".replace(",", " ")
+
+
+def som(x):
+    return fmt(x) + " so'm"
+
 
 def royxat(v):
     if not v:
         return []
-    if isinstance(v, list):
-        return [x for x in v if x]
-    return [x for x in v.values() if x]
+    items = v if isinstance(v, list) else list(v.values())
+    return [x for x in items if isinstance(x, dict)]
+
+
+def safe_key(k):
+    """Firebase kalitida . $ # [ ] / belgilari mumkin emas."""
+    return re.sub(r"[.$#\[\]/\x00-\x1f]", "_", str(k)).strip() or "_"
+
 
 def sof(s):
-    return (+s.get("price", 0) or 0) - (+s.get("disc", 0) or 0) - (+s.get("food", 0) or 0)
+    return num(s.get("price")) - num(s.get("disc")) - num(s.get("food"))
+
+
+def qarz(s):
+    """Qolgan qarz: to'langan bo'lsa 0, aks holda sof summa - to'langan qism."""
+    if s.get("st") == "st-paid":
+        return 0.0
+    return max(sof(s) - num(s.get("paid")), 0.0)
+
 
 def holat_uz(kod):
-    return {"st-paid": "TO'LANDI", "st-partial": "QISMAN"}.get(kod, "QARZ")
+    return HOLATLAR.get(kod, "QARZ")
+
 
 def holat_kod(uz):
-    return {"TO'LANDI": "st-paid", "QISMAN": "st-partial"}.get(uz, "QARZ")
+    return {v: k for k, v in HOLATLAR.items()}.get(uz, "st-debt")
 
-# ================== DIZAYN KOMPONENTLARI ==================
 
+def eq(a, b):
+    return hmac.compare_digest(str(a).encode(), str(b).encode())
+
+
+def hash_raw(parol, tuz):
+    return hashlib.pbkdf2_hmac("sha256", parol.encode(), tuz.encode(), 120_000).hex()
+
+
+def hash_pw(parol):
+    tuz = secrets.token_hex(8)
+    return f"pbkdf2${tuz}${hash_raw(parol, tuz)}"
+
+
+def check_pw(parol, saqlangan):
+    if not saqlangan:
+        return False
+    if str(saqlangan).startswith("pbkdf2$"):
+        try:
+            _, tuz, h = saqlangan.split("$")
+        except ValueError:
+            return False
+        return eq(hash_raw(parol, tuz), h)
+    return eq(parol, saqlangan)  # eski (ochiq) parol — kirishda avtomatik hashlanadi
+
+
+def tg_yubor(c, matn):
+    tok, chat = c.get("tgToken"), c.get("chatId")
+    if not tok or not chat:
+        return False
+    try:
+        r = requests.post(f"https://api.telegram.org/bot{tok}/sendMessage",
+                          json={"chat_id": chat, "text": matn[:4000]}, timeout=10)
+        return r.ok
+    except requests.RequestException:
+        return False
+
+
+def excel_tugma(df, varaq, fayl, key):
+    try:
+        buf = io.BytesIO()
+        with pd.ExcelWriter(buf, engine="openpyxl") as w:
+            df.to_excel(w, index=False, sheet_name=varaq[:31])
+        st.download_button("📊 Excel yuklab olish", buf.getvalue(), file_name=f"{fayl}.xlsx",
+                           mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                           key=key, **KENG)
+    except Exception:  # openpyxl o'rnatilmagan bo'lsa
+        st.download_button("📄 CSV yuklab olish", df.to_csv(index=False).encode("utf-8-sig"),
+                           file_name=f"{fayl}.csv", mime="text/csv", key=key, **KENG)
+
+
+def eslat(matn):
+    """Sahifa qayta yuklangandan keyin ham ko'rinadigan xabar."""
+    st.session_state.flash = matn
+
+
+# ------------------------------------------------------------
+# DIZAYN KOMPONENTLARI
+# ------------------------------------------------------------
 def hero(sarlavha, ostki=""):
-    st.markdown(f"""<div class="hero"><h1>{sarlavha}</h1>
-        <p>{ostki}</p></div>""", unsafe_allow_html=True)
+    st.markdown(f"""<div class="hero"><h1>{html.escape(sarlavha)}</h1>
+        <p>{html.escape(ostki)}</p></div>""", unsafe_allow_html=True)
+
 
 def stat_cards(kartalar):
     """kartalar: [(ikonka, nom, qiymat, rang), ...]"""
-    html = '<div class="stats-row">'
+    h = '<div class="stats-row">'
     for icon, nom, qiymat, rang in kartalar:
-        html += f"""<div class="stat-card" style="--ac:{rang}">
-            <div class="lbl">{icon} {nom}</div>
-            <div class="val">{qiymat}</div></div>"""
-    html += '</div>'
-    st.markdown(html, unsafe_allow_html=True)
+        h += f"""<div class="stat-card" style="--ac:{rang}">
+            <div class="lbl">{icon} {html.escape(str(nom))}</div>
+            <div class="val">{html.escape(str(qiymat))}</div></div>"""
+    h += "</div>"
+    st.markdown(h, unsafe_allow_html=True)
 
-# ================== SESSION ==================
-if "kirgan" not in st.session_state:
-    st.session_state.kirgan = False
-    st.session_state.roll = "admin"
-    st.session_state.data = {}
-    st.session_state.yuklandi = False
-    st.session_state.versiya = 0
-    st.session_state.cfg = dict(STANDART)
+
+def oylik_grafik(df, ustunlar, ranglar):
+    """Oylar to'g'ri tartibda (Yanvar → Dekabr) ko'rsatiladigan guruhlangan grafik."""
+    try:
+        import altair as alt
+        uzun = df.melt(id_vars="Oy", value_vars=ustunlar, var_name="Tur", value_name="Summa")
+        ch = alt.Chart(uzun).mark_bar(cornerRadiusTopLeft=4, cornerRadiusTopRight=4).encode(
+            x=alt.X("Oy:N", sort=OYLAR, title=None),
+            xOffset="Tur:N",
+            y=alt.Y("Summa:Q", title=None),
+            color=alt.Color("Tur:N", scale=alt.Scale(domain=ustunlar, range=ranglar),
+                            legend=alt.Legend(orient="bottom", title=None)),
+            tooltip=["Oy", "Tur", "Summa"],
+        ).properties(height=320)
+        st.altair_chart(ch, **KENG)
+    except Exception:
+        st.bar_chart(df.set_index("Oy")[ustunlar])
+
+
+# ------------------------------------------------------------
+# SESSION
+# ------------------------------------------------------------
+for k, v in {"kirgan": False, "roll": "view", "data": {}, "yuklandi": False,
+             "versiya": 0, "cfg": dict(STANDART)}.items():
+    st.session_state.setdefault(k, v)
+
 
 def bulutdan_yukla():
-    st.session_state.data = fb_get("accounting/data") or {}
+    d = oqi("accounting/data", yangi=True)
+    st.session_state.data = d if isinstance(d, dict) else {}
     st.session_state.yuklandi = True
 
-def bulutga_saqla():
-    if fb_put("accounting/data", st.session_state.data):
-        st.toast("✅ Bulutga saqlandi!")
-    else:
-        st.toast("⚠️ Bulutga yozib bo'lmadi!", icon="⚠️")
 
 def oy_ma(oy):
     return royxat(st.session_state.data.get(oy))
 
-# ================== CHIROYLI KIRISH ==================
-if not st.session_state.kirgan:
+
+def oy_saqla(oy, mal):
+    """Faqat bitta oyni yozadi — boshqa oylar ustiga yozilib ketmaydi."""
+    if fb_put(f"accounting/data/{oy}", mal):
+        st.session_state.data[oy] = mal
+        return True
+    return False
+
+
+# ------------------------------------------------------------
+# KIRISH
+# ------------------------------------------------------------
+def tekshir(u, p):
+    try:
+        c = {**STANDART, **(fb_get("accounting/config") or {})}
+    except Exception:
+        st.error("☁️ Bulutga ulanib bo'lmadi.")
+        return
+    akk = [(c["user"], c["pass"], "pass", "admin")]
+    if c.get("user2"):
+        akk.append((c["user2"], c.get("pass2", ""), "pass2",
+                    "admin" if c.get("role2") == "full" else "view"))
+    for lg, sp, kalit, roll in akk:
+        if lg and eq(u.strip(), lg) and check_pw(p, sp):
+            if not str(sp).startswith("pbkdf2$"):  # ochiq parolni hashga o'tkazish
+                c[kalit] = hash_pw(p)
+                fb_put("accounting/config", c)
+            st.session_state.update(kirgan=True, roll=roll, cfg=c, xato=0,
+                                    standart_parol=eq(p, "123"))
+            st.rerun()
+    st.session_state.xato = st.session_state.get("xato", 0) + 1
+    if st.session_state.xato >= 5:
+        st.session_state.blok_vaqt = time.time() + 60
+        st.session_state.xato = 0
+        st.error("Juda ko'p xato urinish. 1 daqiqadan so'ng qayta urining.")
+    else:
+        st.error("Login yoki parol xato!")
+
+
+def parol_tiklash():
+    st.caption("Tasdiqlash kodi sozlamalarda ko'rsatilgan Telegram chatga yuboriladi.")
+    tel = st.text_input("Ro'yxatdagi telefon raqam", key="rec_tel")
+    if st.button("📨 Telegramga kod yuborish", key="rec_send"):
+        try:
+            c = {**STANDART, **(fb_get("accounting/config") or {})}
+        except Exception:
+            st.error("☁️ Bulutga ulanib bo'lmadi.")
+            return
+        if not (c.get("tgToken") and c.get("chatId")):
+            st.error("Telegram sozlanmagan. Parolni Firebase konsolida (accounting/config) qo'lda tiklang.")
+        elif len(tel.strip()) >= 7 and eq(tel.strip(), c.get("phone") or ""):
+            kod = f"{secrets.randbelow(10**6):06d}"
+            if tg_yubor(c, f"🔐 Parol tiklash kodi: {kod}\n(10 daqiqa amal qiladi)"):
+                st.session_state.rec = (kod, time.time() + 600)
+                st.success("Kod Telegramga yuborildi.")
+            else:
+                st.error("Kodni yuborib bo'lmadi.")
+        else:
+            st.error("Raqam mos kelmadi.")
+    if st.session_state.get("rec"):
+        kod_i = st.text_input("Telegramdagi kod", key="rec_kod")
+        yangi = st.text_input("Yangi parol", type="password", key="rec_new")
+        if st.button("✅ Parolni yangilash", key="rec_ok"):
+            kod, muddat = st.session_state.rec
+            if time.time() > muddat:
+                st.error("Kod muddati tugadi.")
+            elif not eq(kod_i.strip(), kod):
+                st.error("Kod noto'g'ri.")
+            elif len(yangi) < MIN_PAROL:
+                st.error(f"Parol kamida {MIN_PAROL} belgi bo'lsin.")
+            else:
+                c = {**STANDART, **(fb_get("accounting/config") or {})}
+                c["pass"] = hash_pw(yangi)
+                if fb_put("accounting/config", c):
+                    st.session_state.rec = None
+                    st.success("Parol yangilandi. Endi kirishingiz mumkin.")
+                else:
+                    st.error("Saqlab bo'lmadi.")
+
+
+def kirish_oynasi():
     st.markdown("""<div style="text-align:center; padding:20px 0 8px;">
         <div style="font-size:56px;">☁️</div>
         <h1 style="margin:0; background:linear-gradient(90deg,#a5b4fc,#f0abfc);
         -webkit-background-clip:text; background-clip:text; color:transparent;">
         Cloud Buxgalteriya</h1>
-        <p style="color:#94a3b8;">Talabalar hisob-kitobi tizimi — Python versiya</p></div>""",
-        unsafe_allow_html=True)
-    _, c, _ = st.columns([1.5, 2, 1.5])
+        <p style="color:#94a3b8;">Talabalar hisob-kitobi tizimi</p></div>""",
+                unsafe_allow_html=True)
+    _, c, _ = st.columns([1.2, 2, 1.2])
     with c:
-        u = st.text_input("👤 Login", key="lg_u")
-        p = st.text_input("🔒 Parol", type="password", key="lg_p")
-        if st.button("🚀 Kirish", use_container_width=True, type="primary"):
-            cfg = {**STANDART, **(fb_get("accounting/config") or {})}
-            st.session_state.cfg = cfg
-            if u.strip() == cfg["user"] and p == cfg["pass"]:
-                st.session_state.kirgan, st.session_state.roll = True, "admin"
-                st.rerun()
-            elif cfg.get("user2") and u.strip() == cfg["user2"] and p == cfg.get("pass2", ""):
-                st.session_state.kirgan = True
-                st.session_state.roll = "admin" if cfg.get("role2") == "full" else "view"
-                st.rerun()
+        with st.form("kirish_forma"):
+            u = st.text_input("👤 Login")
+            p = st.text_input("🔒 Parol", type="password")
+            ok = st.form_submit_button("🚀 Kirish", type="primary", **KENG)
+        if ok:
+            qolgan = st.session_state.get("blok_vaqt", 0) - time.time()
+            if qolgan > 0:
+                st.error(f"Ko'p xato urinish. {int(qolgan)} soniyadan so'ng urinib ko'ring.")
             else:
-                st.error("Login yoki parol xato! (Standart: admin / 123)")
+                tekshir(u, p)
         with st.expander("❓ Parolni unutdim"):
-            tel = st.text_input("Telefon raqamingiz", key="rec")
-            if st.button("Parolni ko'rish"):
-                cfg = {**STANDART, **(fb_get("accounting/config") or {})}
-                if tel.strip() and tel.strip() == (cfg.get("phone") or ""):
-                    st.info(f"Login: {cfg['user']} | Parol: {cfg['pass']}")
-                else:
-                    st.error("Bu raqam ro'yxatda yo'q!")
+            parol_tiklash()
     st.stop()
 
+
+if not st.session_state.kirgan:
+    kirish_oynasi()
+
 if not st.session_state.yuklandi:
-    st.session_state.cfg = {**STANDART, **(fb_get("accounting/config") or {})}
     bulutdan_yukla()
 
 cfg = st.session_state.cfg
 ADMIN = st.session_state.roll == "admin"
 
-# ================== SIDEBAR ==================
-with st.sidebar:
-    st.markdown("""<div style="text-align:center; padding:8px 0 16px;">
-        <div style="font-size:40px;">☁️</div>
-        <div style="font-weight:800; font-size:16px; color:#fff;">Maktab Pro</div>
-        <div style="font-size:11px; color:#64748b;">Python versiya</div></div>""",
-        unsafe_allow_html=True)
-    sahifa = st.radio("Bo'lim", [
-        "🏠 Dashboard", "💰 Hisob", "📅 Kunlik davomat", "📊 Taqqoslash",
-        "🔴 Qarzdorlar", "📈 Yillik", "🧾 To'lovlar", "💸 Xarajatlar",
-        "👨‍🎓 Baza", "⚙️ Sozlamalar"], label_visibility="collapsed")
-    st.markdown("---")
-    if st.button("🔄 Bulutdan yangilash", use_container_width=True):
-        bulutdan_yukla()
-        st.session_state.versiya += 1
-        st.rerun()
-    if st.button("🚪 Chiqish", use_container_width=True):
-        st.session_state.kirgan = False
-        st.rerun()
-    st.caption("Python + Streamlit 💛")
 
-# ================== 🏠 DASHBOARD ==================
-if sahifa == "🏠 Dashboard":
-    hero("👋 Xush kelibsiz!", f"{cfg.get('orgName','Maktab')} — barcha hisoblar bir joyda")
-    jami_o = sum(len(oy_ma(oy)) for oy in OYLAR)
-    jami_t = sum((+s.get("price", 0) or 0) for oy in OYLAR for s in oy_ma(oy))
-    jami_q = sum(max(sof(s), 0) for oy in OYLAR for s in oy_ma(oy)
-                 if s.get("st") == "st-debt")
-    stat_cards([
-        ("👥", "O'quvchi yozuvlari", jami_o, "#6366f1"),
-        ("💰", "Umumiy tushum", f"{int(jami_t):,} so'm".replace(",", " "), "#10b981"),
-        ("🔴", "Umumiy qarz", f"{int(jami_q):,} so'm".replace(",", " "), "#ef4444"),
-        ("📚", "Oylar", f"{sum(1 for oy in OYLAR if oy_ma(oy))}/12", "#f59e0b"),
-    ])
+# ------------------------------------------------------------
+# 🏠 DASHBOARD
+# ------------------------------------------------------------
+def sahifa_dashboard():
+    hero("👋 Xush kelibsiz!", f"{cfg.get('orgName', 'Maktab')} — barcha hisoblar bir joyda")
+    if st.session_state.get("standart_parol"):
+        st.warning("⚠️ Siz standart parol (123) bilan kirdingiz. «⚙️ Sozlamalar»da uni darhol almashtiring!")
     if not ADMIN:
         st.info("👀 Siz faqat ko'rish rejimidasiz")
 
-# ================== 💰 HISOB ==================
-elif sahifa == "💰 Hisob":
-    hero("💰 Hisob", "Jadvalni tahrirlang va «Saqlash»ni bosing")
-    oy = st.selectbox("📅 Oy", OYLAR, index=datetime.now().month - 1, key="h_oy")
-    cls_f = st.text_input("🎓 Sinf filtri (bo'sh = barchasi)", key="h_cls")
+    hamma = {oy: oy_ma(oy) for oy in OYLAR}
+    barcha = [s for m in hamma.values() for s in m]
+    jami_t = sum(num(s.get("price")) for s in barcha)
+    jami_sof = sum(sof(s) for s in barcha)
+    jami_q = sum(qarz(s) for s in barcha)
+    foiz = round(max(jami_sof - jami_q, 0) / jami_sof * 100) if jami_sof > 0 else 0
+    stat_cards([
+        ("👥", "O'quvchi yozuvlari", len(barcha), "#6366f1"),
+        ("💰", "Umumiy tushum", som(jami_t), "#10b981"),
+        ("🔴", "Umumiy qarz", som(jami_q), "#ef4444"),
+        ("📈", "Undirish darajasi", f"{foiz}%", "#8b5cf6"),
+        ("📚", "To'ldirilgan oylar", f"{sum(1 for m in hamma.values() if m)}/12", "#f59e0b"),
+    ])
 
-    mal = oy_ma(oy)
-    df = pd.DataFrame([{
-        "Ism": str(s.get("name") or ""), "Sinf": str(s.get("cls") or ""),
-        "Narx": float(s.get("price") or 0), "Chegirma": float(s.get("disc") or 0),
-        "Ovqat": float(s.get("food") or 0), "Holat": holat_uz(s.get("st")),
-        "Keldi": bool(s.get("att", True)),
-    } for s in mal])
-    if cls_f.strip():
-        df = df[df["Sinf"].str.strip() == cls_f.strip()]
+    reja = num(cfg.get("monthlyPlan"))
+    if reja > 0:
+        joriy_oy = OYLAR[datetime.now().month - 1]
+        yigildi = sum(sof(s) - qarz(s) for s in hamma[joriy_oy])
+        st.caption(f"🎯 {joriy_oy} rejasi: {som(yigildi)} / {som(reja)}")
+        st.progress(min(max(yigildi / reja, 0.0), 1.0))
 
-    tahrir = st.data_editor(df, num_rows="dynamic" if ADMIN else "fixed",
-        hide_index=True, use_container_width=True,
-        column_config={
-            "Ism": st.column_config.TextColumn("👤 Ism", width="large"),
-            "Narx": st.column_config.NumberColumn("💰 Narx", step=1000),
-            "Chegirma": st.column_config.NumberColumn("🎗 Chegirma", step=1000),
-            "Ovqat": st.column_config.NumberColumn("🍽 Ovqat", step=1000),
-            "Holat": st.column_config.SelectboxColumn("Holat", options=["QARZ", "QISMAN", "TO'LANDI"]),
-            "Keldi": st.column_config.CheckboxColumn("✅ Keldi"),
-        }, key=f"jadval_{oy}_{st.session_state.versiya}")
+    if barcha:
+        grafik_df = pd.DataFrame([{
+            "Oy": oy,
+            "Tushum": sum(num(s.get("price")) for s in m),
+            "Qarz": sum(qarz(s) for s in m)} for oy, m in hamma.items()])
+        st.markdown("#### 📊 Oylar kesimida")
+        oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#6366f1", "#ef4444"])
 
-    if ADMIN and st.button("💾 Bulutga saqlash", type="primary", use_container_width=True):
-        taza = tahrir.fillna({"Ism": "", "Sinf": "", "Narx": 0, "Chegirma": 0, "Ovqat": 0, "Holat": "QARZ"})
-        taza["Keldi"] = taza["Keldi"].fillna(True)
-        st.session_state.data[oy] = [{
-            "name": str(r["Ism"]), "cls": str(r["Sinf"]), "price": float(r["Narx"]),
-            "disc": float(r["Chegirma"]), "food": float(r["Ovqat"]),
-            "st": holat_kod(r["Holat"]), "att": bool(r["Keldi"]),
-        } for _, r in taza.iterrows()]
-        bulutga_saqla()
-
-    if not tahrir.empty:
-        t = tahrir.fillna({"Narx": 0, "Chegirma": 0, "Ovqat": 0})
-        sof_s = t["Narx"] - t["Chegirma"] - t["Ovqat"]
-        qarz_s = sof_s[t["Holat"] == "QARZ"].clip(lower=0).sum()
-        stat_cards([
-            ("💰", "Tushum", f"{int(t['Narx'].sum()):,}".replace(",", " "), "#6366f1"),
-            ("🎗", "Chegirma", f"{int(t['Chegirma'].sum()):,}".replace(",", " "), "#f59e0b"),
-            ("🍽", "Ovqat", f"{int(t['Ovqat'].sum()):,}".replace(",", " "), "#ef4444"),
-            ("✅", "Foyda", f"{int(sof_s.sum()):,}".replace(",", " "), "#10b981"),
-            ("👥", "O'quvchi", len(t), "#8b5cf6"),
-            ("🔴", "Qarz", f"{int(qarz_s):,}".replace(",", " "), "#ef4444"),
-        ])
-        st.bar_chart(pd.DataFrame({"so'm": [t["Narx"].sum(), t["Ovqat"].sum(), sof_s.sum()]},
-            index=["Tushum", "Ovqat", "Foyda"]), color="#6366f1")
-        buf = io.BytesIO()
-        exc = t.copy(); exc["Sof"] = sof_s
-        exc.to_excel(buf, index=False, sheet_name=oy)
-        st.download_button("📊 Excel yuklab olish", buf.getvalue(),
-                           file_name=f"Hisobot_{oy}.xlsx", use_container_width=True)
-    else:
-        st.info("Bu oyda ma'lumot yo'q — jadvalga qator qo'shing!")
-
-# ================== 📅 KUNLIK DAVOMAT ==================
-elif sahifa == "📅 Kunlik davomat":
-    hero("📅 Kunlik davomat", "Har kuni kim kelganini belgilang")
-    sana = str(st.date_input("Sana", value=datetime.now()))
-    bazalar = royxat(fb_get("accounting/students"))
-    if not bazalar:
-        st.warning("Baza bo'sh! Avval «👨‍🎓 Baza» bo'limida o'quvchi qo'shing.")
-    else:
-        dav = (st.session_state.data.get("__davomat__") or {}).get(sana) or {}
-        st.markdown(f"#### 📆 {sana}")
-        belgilar = {}
-        for b in bazalar:
-            nom = b.get("name") or "?"
-            hozir = dav.get(nom)
-            c1, c2 = st.columns([3, 1])
-            c1.markdown(f"**{nom}**" + (f" · {b.get('cls','')}" if b.get('cls') else ""))
-            belgilar[nom] = c2.radio(nom, ["—", "✅ Keldi", "❌ Kelmadi"],
-                index=0 if hozir is None else (1 if hozir is True else 2),
-                key=f"a_{sana}_{nom}", horizontal=True, label_visibility="collapsed")
-        if st.button("💾 Saqlash", type="primary"):
-            natija = {n: (True if t == "✅ Keldi" else False if t == "❌ Kelmadi" else None)
-                      for n, t in belgilar.items()}
-            dav = st.session_state.data.get("__davomat__") or {}
-            dav[sana] = {k: v for k, v in natija.items() if v is not None}
-            st.session_state.data["__davomat__"] = dav
-            bulutga_saqla()
+    c1, c2, c3 = st.columns(3)
+    with c1:
+        st.markdown("#### 🔴 Eng katta qarzdorlar")
+        qd = {}
+        for m in hamma.values():
+            for s in m:
+                q = qarz(s)
+                nom = str(s.get("name") or "").strip()
+                if q > 0 and nom:
+                    qd[nom] = qd.get(nom, 0) + q
+        top = sorted(qd.items(), key=lambda x: -x[1])[:5]
+        if top:
+            st.dataframe(pd.DataFrame([{"Ism": n, "Qarz": fmt(q)} for n, q in top]),
+                         hide_index=True, **KENG)
+        else:
+            st.success("Qarzdor yo'q 🎉")
+    with c2:
+        st.markdown("#### 🧾 So'nggi to'lovlar")
+        tol = royxat(oqi("accounting/payments"))[:5]
+        if tol:
+            st.dataframe(pd.DataFrame([{"Sana": p.get("date", ""), "Ism": p.get("name", ""),
+                                        "Summa": fmt(p.get("amount"))} for p in tol]),
+                         hide_index=True, **KENG)
+        else:
+            st.info("To'lovlar yo'q")
+    with c3:
+        st.markdown("#### 📅 Bugungi davomat")
+        dav = (st.session_state.data.get("__davomat__") or {}).get(str(date.today())) or {}
         kel = sum(1 for v in dav.values() if v is True)
         kelma = sum(1 for v in dav.values() if v is False)
-        stat_cards([("✅", "Keldi", kel, "#10b981"), ("❌", "Kelmadi", kelma, "#ef4444")])
+        if dav:
+            stat_cards([("✅", "Keldi", kel, "#10b981"), ("❌", "Kelmadi", kelma, "#ef4444")])
+        else:
+            st.info("Bugun hali belgilanmagan")
 
-# ================== 📊 TAQQOSLASH ==================
-elif sahifa == "📊 Taqqoslash":
+
+# ------------------------------------------------------------
+# 💰 HISOB
+# ------------------------------------------------------------
+USTUN = ["Ism", "Sinf", "Narx", "Chegirma", "Ovqat", "To'langan", "Holat", "Keldi"]
+SONLI = ["Narx", "Chegirma", "Ovqat", "To'langan"]
+
+
+def oy_df(mal):
+    rows = [{
+        "Ism": str(s.get("name") or ""), "Sinf": str(s.get("cls") or ""),
+        "Narx": num(s.get("price")), "Chegirma": num(s.get("disc")), "Ovqat": num(s.get("food")),
+        "To'langan": num(s.get("paid")), "Holat": holat_uz(s.get("st")),
+        "Keldi": bool(s.get("att", True)),
+    } for s in mal]
+    df = pd.DataFrame(rows, columns=USTUN)
+    return df.astype({**{c: float for c in SONLI}, "Keldi": bool})
+
+
+def df_oy(df):
+    df = df.copy()
+    df["Ism"] = df["Ism"].fillna("").astype(str).str.strip()
+    df["Sinf"] = df["Sinf"].fillna("").astype(str).str.strip()
+    df["Holat"] = df["Holat"].fillna("QARZ")
+    df["Keldi"] = df["Keldi"].fillna(True)
+    for c in SONLI:
+        df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
+    out = []
+    for r in df.to_dict("records"):
+        if not r["Ism"]:
+            continue
+        out.append({"name": r["Ism"], "cls": r["Sinf"], "price": num(r["Narx"]),
+                    "disc": num(r["Chegirma"]), "food": num(r["Ovqat"]),
+                    "paid": num(r["To'langan"]), "st": holat_kod(r["Holat"]),
+                    "att": bool(r["Keldi"])})
+    return out
+
+
+def bazadan_qosh(oy):
+    mal = oy_ma(oy)
+    bor = {str(s.get("name", "")).strip().lower() for s in mal}
+    n = 0
+    for b in royxat(oqi("accounting/students")):
+        nom = str(b.get("name") or "").strip()
+        if nom and nom.lower() not in bor:
+            mal.append({"name": nom, "cls": str(b.get("cls") or "").strip(),
+                        "price": num(b.get("price")) or num(cfg.get("defaultPrice")),
+                        "disc": 0, "food": 0, "paid": 0, "st": "st-debt", "att": True})
+            bor.add(nom.lower())
+            n += 1
+    return mal, n
+
+
+def oldingi_oydan(oy):
+    i = OYLAR.index(oy)
+    if i == 0:
+        return oy_ma(oy), 0
+    mal = oy_ma(oy)
+    bor = {str(s.get("name", "")).strip().lower() for s in mal}
+    n = 0
+    for s in oy_ma(OYLAR[i - 1]):
+        nom = str(s.get("name") or "").strip()
+        if nom and nom.lower() not in bor:
+            mal.append({**s, "paid": 0, "st": "st-debt", "att": True})
+            bor.add(nom.lower())
+            n += 1
+    return mal, n
+
+
+def sahifa_hisob():
+    hero("💰 Hisob", "Jadvalni tahrirlang va «Bulutga saqlash»ni bosing")
+    c1, c2 = st.columns(2)
+    oy = c1.selectbox("📅 Oy", OYLAR, index=datetime.now().month - 1, key="h_oy")
+    mal = oy_ma(oy)
+    toliq = oy_df(mal)
+    sinflar = sorted({x for x in toliq["Sinf"].str.strip() if x})
+    sinf_f = c2.selectbox("🎓 Sinf filtri", ["Barchasi"] + sinflar, key="h_cls")
+
+    if ADMIN:
+        with st.expander("⚡ Tezkor amallar"):
+            a1, a2 = st.columns(2)
+            if a1.button("📥 Bazadagi o'quvchilarni qo'shish", **KENG):
+                yangi, n = bazadan_qosh(oy)
+                if n and oy_saqla(oy, yangi):
+                    eslat(f"✅ {n} ta o'quvchi qo'shildi")
+                    st.session_state.versiya += 1
+                    st.rerun()
+                st.info("Qo'shiladigan yangi o'quvchi topilmadi" if not n else "Saqlab bo'lmadi")
+            if a2.button("📋 Oldingi oydan nusxalash", **KENG):
+                yangi, n = oldingi_oydan(oy)
+                if n and oy_saqla(oy, yangi):
+                    eslat(f"✅ {n} ta yozuv ko'chirildi (holat: QARZ)")
+                    st.session_state.versiya += 1
+                    st.rerun()
+                st.info("Ko'chiriladigan yozuv topilmadi" if not n else "Saqlab bo'lmadi")
+
+    mask = (toliq["Sinf"].str.strip() == sinf_f) if sinf_f != "Barchasi" else pd.Series(True, index=toliq.index)
+    tahrir = st.data_editor(
+        toliq[mask], num_rows="dynamic" if ADMIN else "fixed", hide_index=True,
+        disabled=not ADMIN, **KENG,
+        column_config={
+            "Ism": st.column_config.TextColumn("👤 Ism", width="large"),
+            "Narx": st.column_config.NumberColumn("💰 Narx", step=1000, min_value=0),
+            "Chegirma": st.column_config.NumberColumn("🎗 Chegirma", step=1000, min_value=0),
+            "Ovqat": st.column_config.NumberColumn("🍽 Ovqat", step=1000, min_value=0),
+            "To'langan": st.column_config.NumberColumn("💵 To'langan", step=1000, min_value=0),
+            "Holat": st.column_config.SelectboxColumn("Holat", options=list(HOLATLAR.values())),
+            "Keldi": st.column_config.CheckboxColumn("✅ Keldi"),
+        }, key=f"jadval_{oy}_{sinf_f}_{st.session_state.versiya}")
+
+    if ADMIN and st.button("💾 Bulutga saqlash", type="primary", **KENG):
+        yangi = tahrir.copy()
+        if sinf_f != "Barchasi":  # yangi qatorlarga filtrdagi sinf avtomatik beriladi
+            yangi["Sinf"] = yangi["Sinf"].fillna("").replace("", sinf_f)
+        # Filtrdan tashqarida qolgan qatorlar yo'qolmaydi
+        birlashgan = pd.concat([toliq[~mask], yangi], ignore_index=True)
+        if oy_saqla(oy, df_oy(birlashgan)):
+            eslat("✅ Bulutga saqlandi!")
+            st.session_state.versiya += 1
+            st.rerun()
+        else:
+            st.error("⚠️ Bulutga yozib bo'lmadi!")
+
+    joriy = df_oy(tahrir) if len(tahrir) else []
+    if joriy:
+        stat_cards([
+            ("💰", "Tushum", fmt(sum(num(s["price"]) for s in joriy)), "#6366f1"),
+            ("🎗", "Chegirma", fmt(sum(num(s["disc"]) for s in joriy)), "#f59e0b"),
+            ("🍽", "Ovqat", fmt(sum(num(s["food"]) for s in joriy)), "#ef4444"),
+            ("✅", "Sof foyda", fmt(sum(sof(s) for s in joriy)), "#10b981"),
+            ("👥", "O'quvchi", len(joriy), "#8b5cf6"),
+            ("🔴", "Qarz", fmt(sum(qarz(s) for s in joriy)), "#ef4444"),
+        ])
+        exc = pd.DataFrame([{
+            "Ism": s["name"], "Sinf": s["cls"], "Narx": s["price"], "Chegirma": s["disc"],
+            "Ovqat": s["food"], "Sof": sof(s), "To'langan": s["paid"], "Qarz": qarz(s),
+            "Holat": holat_uz(s["st"]), "Keldi": "Ha" if s["att"] else "Yo'q"} for s in joriy])
+        excel_tugma(exc, oy, f"Hisobot_{oy}", "xl_hisob")
+    else:
+        st.info("Bu oyda ma'lumot yo'q — jadvalga qator qo'shing yoki «Tezkor amallar»dan foydalaning!")
+
+
+# ------------------------------------------------------------
+# 📅 KUNLIK DAVOMAT
+# ------------------------------------------------------------
+def sahifa_davomat():
+    hero("📅 Kunlik davomat", "Har kuni kim kelganini belgilang")
+    sana_d = st.date_input("Sana", value=date.today())
+    sana = str(sana_d)
+    bazalar = royxat(oqi("accounting/students"))
+    if not bazalar:
+        st.warning("Baza bo'sh! Avval «👨‍🎓 Baza» bo'limida o'quvchi qo'shing.")
+        return
+
+    saqlangan = (st.session_state.data.get("__davomat__") or {}).get(sana) or {}
+    boshl_kalit = f"dav_def_{sana}"
+    boshl = st.session_state.get(boshl_kalit)
+
+    if ADMIN:
+        b1, b2, _ = st.columns([1, 1, 2])
+        if b1.button("✅ Hammasi keldi", **KENG):
+            st.session_state[boshl_kalit] = "Keldi"
+            st.rerun()
+        if b2.button("↺ Tozalash", **KENG):
+            st.session_state[boshl_kalit] = "—"
+            st.rerun()
+
+    rows = []
+    for b in bazalar:
+        nom = str(b.get("name") or "").strip()
+        if not nom:
+            continue
+        v = saqlangan.get(safe_key(nom))
+        h = "Keldi" if v is True else "Kelmadi" if v is False else "—"
+        rows.append({"Ism": nom, "Sinf": str(b.get("cls") or ""), "Holat": boshl or h})
+    df = pd.DataFrame(rows)
+    tahrir = st.data_editor(
+        df, hide_index=True, disabled=["Ism", "Sinf"] if ADMIN else True, **KENG,
+        column_config={"Holat": st.column_config.SelectboxColumn(
+            "Holat", options=["—", "Keldi", "Kelmadi"], required=True)},
+        key=f"dav_{sana}_{st.session_state.versiya}_{boshl}")
+
+    kel = int((tahrir["Holat"] == "Keldi").sum())
+    kelma = int((tahrir["Holat"] == "Kelmadi").sum())
+    belgisiz = int((tahrir["Holat"] == "—").sum())
+    stat_cards([("✅", "Keldi", kel, "#10b981"), ("❌", "Kelmadi", kelma, "#ef4444"),
+                ("⏳", "Belgilanmagan", belgisiz, "#f59e0b")])
+
+    if ADMIN and st.button("💾 Davomatni saqlash", type="primary", **KENG):
+        natija = {safe_key(r["Ism"]): r["Holat"] == "Keldi"
+                  for r in tahrir.to_dict("records") if r["Holat"] != "—"}
+        if fb_put(f"accounting/data/__davomat__/{sana}", natija):
+            hammasi = dict(st.session_state.data.get("__davomat__") or {})
+            hammasi[sana] = natija
+            st.session_state.data["__davomat__"] = hammasi
+            st.session_state.pop(boshl_kalit, None)
+            eslat("✅ Davomat saqlandi!")
+            st.rerun()
+        else:
+            st.error("⚠️ Bulutga yozib bo'lmadi!")
+
+    with st.expander("📆 Oylik davomat hisoboti"):
+        oy_nom = st.selectbox("Oy", OYLAR, index=sana_d.month - 1, key="dv_oy")
+        pref = f"{sana_d.year}-{OYLAR.index(oy_nom) + 1:02d}"
+        hisob = {}
+        for k, kunlar in (st.session_state.data.get("__davomat__") or {}).items():
+            if str(k).startswith(pref) and isinstance(kunlar, dict):
+                for nom, v in kunlar.items():
+                    h = hisob.setdefault(nom, [0, 0])
+                    h[0 if v is True else 1] += 1
+        if hisob:
+            st.dataframe(pd.DataFrame([{
+                "Ism": n, "Keldi": a, "Kelmadi": b,
+                "Davomat %": round(a / (a + b) * 100) if (a + b) else 0}
+                for n, (a, b) in sorted(hisob.items())]), hide_index=True, **KENG)
+        else:
+            st.info("Bu oy uchun davomat yo'q")
+
+
+# ------------------------------------------------------------
+# 📊 TAQQOSLASH
+# ------------------------------------------------------------
+def sahifa_taqqoslash():
     hero("📊 Sinflar taqqoslash")
     oy = st.selectbox("📅 Oy", OYLAR, index=datetime.now().month - 1, key="t_oy")
     groups = {}
@@ -342,160 +747,436 @@ elif sahifa == "📊 Taqqoslash":
         groups.setdefault((s.get("cls") or "").strip() or "Sinfsiz", []).append(s)
     if not groups:
         st.info("Bu oyda ma'lumot yo'q")
-    else:
-        rows = [{"Sinf": c, "O'quvchi": len(g),
-                 "Tushum": sum(+s.get("price", 0) or 0 for s in g),
-                 "Ovqat": sum(+s.get("food", 0) or 0 for s in g),
-                 "Qarz": sum(max(sof(s), 0) for s in g if s.get("st") == "st-debt"),
-                 "Davomat %": round(sum(1 for s in g if s.get("att", True)) / len(g) * 100)}
-                for c, g in sorted(groups.items())]
-        st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
+        return
+    df = pd.DataFrame([{
+        "Sinf": c, "O'quvchi": len(g),
+        "Tushum": int(sum(num(s.get("price")) for s in g)),
+        "Ovqat": int(sum(num(s.get("food")) for s in g)),
+        "Qarz": int(sum(qarz(s) for s in g)),
+        "Davomat %": round(sum(1 for s in g if s.get("att", True)) / len(g) * 100)}
+        for c, g in sorted(groups.items())])
+    st.dataframe(df, hide_index=True, **KENG)
+    st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#6366f1", "#ef4444"])
+    excel_tugma(df, oy, f"Taqqoslash_{oy}", "xl_taqq")
 
-# ================== 🔴 QARZDORLAR ==================
-elif sahifa == "🔴 Qarzdorlar":
+
+# ------------------------------------------------------------
+# 🔴 QARZDORLAR
+# ------------------------------------------------------------
+def sahifa_qarzdorlar():
     hero("🔴 Qarzdorlar", "Barcha oylar bo'yicha")
-    rows = [{"Oy": oy, "Ism": s["name"], "Sinf": (s.get("cls") or "").strip() or "—",
-             "Qarz": int(sof(s))}
-            for oy in OYLAR for s in oy_ma(oy)
-            if s.get("st") == "st-debt" and s.get("name") and sof(s) > 0]
-    if rows:
-        df = pd.DataFrame(rows)
-        stat_cards([("🔴", "Umumiy qarz", f"{int(df['Qarz'].sum()):,}".replace(",", " "), "#ef4444"),
-                    ("👥", "Qarzdorlar", len(df), "#f59e0b")])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
+    rows = [{"Oy": oy, "Ism": str(s.get("name")).strip(),
+             "Sinf": (s.get("cls") or "").strip() or "—",
+             "Sof": int(sof(s)), "To'langan": int(num(s.get("paid"))), "Qarz": int(qarz(s))}
+            for oy in OYLAR for s in oy_ma(oy) if s.get("name") and qarz(s) > 0]
+    if not rows:
         st.success("🎉 Qarzdor yo'q — hammasi to'lagan!")
+        return
+    df = pd.DataFrame(rows)
+    f1, f2, f3 = st.columns(3)
+    oylar_f = f1.multiselect("📅 Oylar", OYLAR, default=[], placeholder="Barcha oylar")
+    sinf_f = f2.selectbox("🎓 Sinf", ["Barchasi"] + sorted(df["Sinf"].unique()))
+    qidir = f3.text_input("🔎 Ism bo'yicha qidirish")
+    if oylar_f:
+        df = df[df["Oy"].isin(oylar_f)]
+    if sinf_f != "Barchasi":
+        df = df[df["Sinf"] == sinf_f]
+    if qidir.strip():
+        df = df[df["Ism"].str.lower().str.contains(qidir.strip().lower(), regex=False)]
 
-# ================== 📈 YILLIK ==================
-elif sahifa == "📈 Yillik":
+    stat_cards([("🔴", "Umumiy qarz", som(df["Qarz"].sum()), "#ef4444"),
+                ("👥", "Qarzdor yozuvlar", len(df), "#f59e0b"),
+                ("🧑", "Qarzdor o'quvchilar", df["Ism"].nunique(), "#8b5cf6")])
+    t1, t2 = st.tabs(["📅 Oylar bo'yicha", "🧑 O'quvchilar bo'yicha"])
+    with t1:
+        st.dataframe(df, hide_index=True, **KENG,
+                     column_config={"Qarz": st.column_config.NumberColumn(format="%d")})
+    with t2:
+        gr = (df.groupby("Ism", as_index=False)
+              .agg(Sinf=("Sinf", "first"), Oylar=("Oy", "count"), Qarz=("Qarz", "sum"))
+              .sort_values("Qarz", ascending=False))
+        st.dataframe(gr, hide_index=True, **KENG)
+    k1, k2 = st.columns(2)
+    with k1:
+        excel_tugma(df, "Qarzdorlar", "Qarzdorlar", "xl_qarz")
+    with k2:
+        if ADMIN and cfg.get("tgToken") and cfg.get("chatId"):
+            if st.button("📨 Telegramga yuborish", **KENG):
+                matn = "🔴 Qarzdorlar ro'yxati\n" + "\n".join(
+                    f"{r.Ism} ({r.Oy}) — {fmt(r.Qarz)}" for r in df.head(40).itertuples())
+                st.success("Yuborildi ✅") if tg_yubor(cfg, matn) else st.error("Yuborib bo'lmadi")
+
+
+# ------------------------------------------------------------
+# 📈 YILLIK
+# ------------------------------------------------------------
+def sahifa_yillik():
     hero("📈 Yillik hisobot", "12 oy natijalari")
-    xarajatlar = royxat(fb_get("accounting/expenses"))
+    xarajatlar = royxat(oqi("accounting/expenses"))
+    yillar = sorted({str(x.get("date", ""))[:4] for x in xarajatlar if str(x.get("date", ""))[:4].isdigit()}
+                    | {str(date.today().year)}, reverse=True)
+    yil = st.selectbox("📆 Xarajatlar yili", yillar)
     rows = []
     for i, oy in enumerate(OYLAR):
         mal = oy_ma(oy)
-        tushum = sum(+s.get("price", 0) or 0 for s in mal)
-        cheg = sum(+s.get("disc", 0) or 0 for s in mal)
-        ovqat = sum(+s.get("food", 0) or 0 for s in mal)
-        xar = sum(+x.get("amount", 0) or 0 for x in xarajatlar
-                  if str(x.get("date", ""))[5:7] == f"{i+1:02d}")
+        tushum = sum(num(s.get("price")) for s in mal)
+        cheg = sum(num(s.get("disc")) for s in mal)
+        ovqat = sum(num(s.get("food")) for s in mal)
+        xar = sum(num(x.get("amount")) for x in xarajatlar
+                  if str(x.get("date", ""))[:7] == f"{yil}-{i + 1:02d}")
         rows.append({"Oy": oy, "O'quvchi": len(mal), "Tushum": int(tushum),
                      "Chegirma": int(cheg), "Ovqat": int(ovqat), "Xarajat": int(xar),
                      "Sof foyda": int(tushum - cheg - ovqat - xar)})
     df = pd.DataFrame(rows)
-    st.dataframe(df, use_container_width=True, hide_index=True)
-    st.bar_chart(df.set_index("Oy")[["Tushum", "Ovqat", "Xarajat", "Sof foyda"]])
-    stat_cards([("💰", "Yillik tushum", f"{int(df['Tushum'].sum()):,}".replace(",", " "), "#6366f1"),
-                ("💸", "Xarajat", f"{int(df['Xarajat'].sum()):,}".replace(",", " "), "#f59e0b"),
-                ("🏆", "Sof foyda", f"{int(df['Sof foyda'].sum()):,}".replace(",", " "), "#10b981")])
-    buf = io.BytesIO(); df.to_excel(buf, index=False, sheet_name="Yillik")
-    st.download_button("📊 Yillik Excel", buf.getvalue(),
-                       file_name="Yillik_hisobot.xlsx", use_container_width=True)
+    st.dataframe(df, hide_index=True, **KENG)
+    oylik_grafik(df, ["Tushum", "Ovqat", "Xarajat", "Sof foyda"],
+                 ["#6366f1", "#f59e0b", "#ef4444", "#10b981"])
+    stat_cards([("💰", "Yillik tushum", som(df["Tushum"].sum()), "#6366f1"),
+                ("💸", "Xarajat", som(df["Xarajat"].sum()), "#f59e0b"),
+                ("🏆", "Sof foyda", som(df["Sof foyda"].sum()), "#10b981")])
+    excel_tugma(df, "Yillik", "Yillik_hisobot", "xl_yil")
 
-# ================== 🧾 TO'LOVLAR ==================
-elif sahifa == "🧾 To'lovlar":
-    hero("🧾 To'lovlar jurnali")
-    payments = royxat(fb_get("accounting/payments"))
-    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-    p_name = c1.text_input("Ism Sharif")
-    p_amount = c2.number_input("Summa", min_value=0, step=10000)
-    p_type = c3.selectbox("Turi", ["💵 Naqd", "💳 Plastik", "🏦 O'tkazma"])
-    p_date = c4.date_input("Sana", value=datetime.now())
-    p_note = st.text_input("Izoh (masalan: mart oyi)")
-    if st.button("💾 Qayd etish", type="primary") and ADMIN:
-        if p_name.strip() and p_amount > 0:
-            payments.insert(0, {"name": p_name.strip(), "amount": p_amount,
-                "type": p_type, "date": str(p_date), "note": p_note})
-            if fb_put("accounting/payments", payments):
-                st.success("✅ Saqlandi!")
-                st.rerun()
-        else:
+
+# ------------------------------------------------------------
+# 🧾 TO'LOVLAR
+# ------------------------------------------------------------
+TURLAR = ["💵 Naqd", "💳 Plastik", "🏦 O'tkazma"]
+
+
+def hisobga_yoz(oy, ism, summa):
+    """True = yozildi, False = saqlab bo'lmadi, None = o'quvchi topilmadi."""
+    mal = oy_ma(oy)
+    for s in mal:
+        if str(s.get("name", "")).strip().lower() == ism.strip().lower():
+            s["paid"] = num(s.get("paid")) + summa
+            s["st"] = "st-paid" if s["paid"] >= sof(s) else "st-partial"
+            return oy_saqla(oy, mal)
+    return None
+
+
+def sahifa_tolovlar():
+    hero("🧾 To'lovlar jurnali", "To'lovni yozing — xohlasangiz oylik hisobga ham avtomatik qo'shiladi")
+    payments = royxat(oqi("accounting/payments"))
+    baza_nomlar = sorted({str(b.get("name")).strip() for b in royxat(oqi("accounting/students")) if b.get("name")})
+
+    with st.form("tolov_forma", clear_on_submit=True):
+        c1, c2, c3 = st.columns([2, 2, 1])
+        tanlov = c1.selectbox("O'quvchi (bazadan)", [""] + baza_nomlar)
+        qol = c2.text_input("…yoki ism yozing")
+        summa = c3.number_input("Summa", min_value=0, step=10000, value=0)
+        c4, c5, c6 = st.columns([1, 1, 2])
+        turi = c4.selectbox("Turi", TURLAR)
+        sana = c5.date_input("Sana", value=date.today())
+        izoh = c6.text_input("Izoh (masalan: mart oyi)")
+        c7, c8 = st.columns([2, 1])
+        hisobga = c7.checkbox("Oylik hisobdagi «To'langan» ustuniga ham qo'shish", value=True)
+        oy = c8.selectbox("Oy", OYLAR, index=sana.month - 1)
+        yubor = st.form_submit_button("💾 Qayd etish", type="primary", disabled=not ADMIN, **KENG)
+
+    if yubor:
+        ism = (qol.strip() or tanlov).strip()
+        if not ism or summa <= 0:
             st.warning("Ism va summani kiriting!")
-    if payments:
-        df = pd.DataFrame(payments)
-        stat_cards([("💰", "Jami to'lovlar",
-                     f"{int(df['amount'].sum()):,} so'm".replace(",", " "), "#10b981")])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
-        st.info("To'lovlar yo'q")
-
-# ================== 💸 XARAJATLAR ==================
-elif sahifa == "💸 Xarajatlar":
-    hero("💸 Xarajatlar", "Gaz, svet, suv, ta'mirlash...")
-    expenses = royxat(fb_get("accounting/expenses"))
-    c1, c2, c3 = st.columns([2, 1, 1])
-    e_title = c1.text_input("Nima uchun?")
-    e_amount = c2.number_input("Summa", min_value=0, step=10000)
-    e_date = c3.date_input("Sana", value=datetime.now())
-    if st.button("💾 Qayd etish", type="primary") and ADMIN:
-        if e_title.strip() and e_amount > 0:
-            expenses.insert(0, {"title": e_title.strip(), "amount": e_amount, "date": str(e_date)})
-            if fb_put("accounting/expenses", expenses):
-                st.success("✅ Saqlandi!")
+        else:
+            payments.insert(0, {"name": ism, "amount": summa, "type": turi,
+                                "date": str(sana), "note": izoh})
+            if fb_put("accounting/payments", payments):
+                msg = "✅ To'lov saqlandi!"
+                if hisobga:
+                    r = hisobga_yoz(oy, ism, summa)
+                    msg += (f" {oy} hisobiga qo'shildi." if r else
+                            f" ⚠️ «{ism}» {oy} oyida topilmadi (hisobga yozilmadi)." if r is None else
+                            " ⚠️ Hisobga yozib bo'lmadi.")
+                eslat(msg)
                 st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo'lmadi!")
+
+    if not payments:
+        st.info("To'lovlar yo'q")
+        return
+    bu_oy = f"{date.today().year}-{date.today().month:02d}"
+    stat_cards([("💰", "Jami to'lovlar", som(sum(num(p.get("amount")) for p in payments)), "#10b981"),
+                ("📅", "Shu oy", som(sum(num(p.get("amount")) for p in payments
+                                        if str(p.get("date", ""))[:7] == bu_oy)), "#6366f1"),
+                ("🧾", "Yozuvlar soni", len(payments), "#f59e0b")])
+    df = pd.DataFrame([{"Sana": p.get("date", ""), "Ism": p.get("name", ""),
+                        "Summa": num(p.get("amount")), "Turi": p.get("type", TURLAR[0]),
+                        "Izoh": p.get("note", "")} for p in payments],
+                      columns=["Sana", "Ism", "Summa", "Turi", "Izoh"])
+    st.caption("✏️ Qatorni tahrirlash yoki o'chirish mumkin (o'chirish: qatorni belgilab Delete).")
+    tahrir = st.data_editor(
+        df, hide_index=True, num_rows="dynamic" if ADMIN else "fixed", disabled=not ADMIN,
+        **KENG, key=f"tolov_ed_{st.session_state.versiya}",
+        column_config={"Summa": st.column_config.NumberColumn(step=10000, min_value=0),
+                       "Turi": st.column_config.SelectboxColumn(options=TURLAR)})
+    if ADMIN and st.button("💾 O'zgarishlarni saqlash", key="tolov_saqla", **KENG):
+        yangi = [{"date": str(r["Sana"] or date.today()), "name": str(r["Ism"]).strip(),
+                  "amount": num(r["Summa"]), "type": r["Turi"] if isinstance(r["Turi"], str) else TURLAR[0],
+                  "note": "" if pd.isna(r["Izoh"]) else str(r["Izoh"])}
+                 for r in tahrir.to_dict("records") if isinstance(r["Ism"], str) and r["Ism"].strip()]
+        if fb_put("accounting/payments", yangi):
+            eslat("✅ Saqlandi!")
+            st.session_state.versiya += 1
+            st.rerun()
+        else:
+            st.error("⚠️ Bulutga yozib bo'lmadi!")
+    excel_tugma(df, "Tolovlar", "Tolovlar", "xl_tolov")
+
+
+# ------------------------------------------------------------
+# 💸 XARAJATLAR
+# ------------------------------------------------------------
+def sahifa_xarajatlar():
+    hero("💸 Xarajatlar", "Gaz, svet, suv, ta'mirlash...")
+    expenses = royxat(oqi("accounting/expenses"))
+    with st.form("xar_forma", clear_on_submit=True):
+        c1, c2, c3 = st.columns([2, 1, 1])
+        nom = c1.text_input("Nima uchun?")
+        summa = c2.number_input("Summa", min_value=0, step=10000, value=0)
+        sana = c3.date_input("Sana", value=date.today())
+        yubor = st.form_submit_button("💾 Qayd etish", type="primary", disabled=not ADMIN, **KENG)
+    if yubor:
+        if nom.strip() and summa > 0:
+            expenses.insert(0, {"title": nom.strip(), "amount": summa, "date": str(sana)})
+            if fb_put("accounting/expenses", expenses):
+                eslat("✅ Saqlandi!")
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo'lmadi!")
         else:
             st.warning("Maydonlarni to'ldiring!")
-    if expenses:
-        df = pd.DataFrame(expenses)
-        stat_cards([("💸", "Jami xarajat", f"{int(df['amount'].sum()):,} so'm".replace(",", " "), "#ef4444")])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
+    if not expenses:
         st.info("Xarajatlar yo'q")
-
-# ================== 👨‍🎓 BAZA ==================
-elif sahifa == "👨‍🎓 Baza":
-    hero("👨‍🎓 O'quvchilar bazasi", "Bir marta kiritiladi — har oy ishlatiladi")
-    c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
-    b_name = c1.text_input("Ism Sharif")
-    b_cls = c2.text_input("Sinf (1-A)")
-    b_price = c3.number_input("Oylik narx", min_value=0, step=10000)
-    b_phone = c4.text_input("Telefon")
-    if st.button("💾 Qo'shish", type="primary") and ADMIN:
-        if b_name.strip():
-            bazalar = royxat(fb_get("accounting/students"))
-            bazalar.append({"name": b_name.strip(), "cls": b_cls.strip(),
-                            "price": b_price, "phone": b_phone.strip()})
-            if fb_put("accounting/students", bazalar):
-                st.success(f"✅ Qo'shildi!")
-                st.rerun()
+        return
+    bu_oy = f"{date.today().year}-{date.today().month:02d}"
+    stat_cards([("💸", "Jami xarajat", som(sum(num(x.get("amount")) for x in expenses)), "#ef4444"),
+                ("📅", "Shu oy", som(sum(num(x.get("amount")) for x in expenses
+                                        if str(x.get("date", ""))[:7] == bu_oy)), "#f59e0b")])
+    df = pd.DataFrame([{"Sana": x.get("date", ""), "Nima uchun": x.get("title", ""),
+                        "Summa": num(x.get("amount"))} for x in expenses],
+                      columns=["Sana", "Nima uchun", "Summa"])
+    tahrir = st.data_editor(
+        df, hide_index=True, num_rows="dynamic" if ADMIN else "fixed", disabled=not ADMIN,
+        **KENG, key=f"xar_ed_{st.session_state.versiya}",
+        column_config={"Summa": st.column_config.NumberColumn(step=10000, min_value=0)})
+    if ADMIN and st.button("💾 O'zgarishlarni saqlash", key="xar_saqla", **KENG):
+        yangi = [{"date": str(r["Sana"] or date.today()), "title": str(r["Nima uchun"]).strip(),
+                  "amount": num(r["Summa"])}
+                 for r in tahrir.to_dict("records")
+                 if isinstance(r["Nima uchun"], str) and r["Nima uchun"].strip()]
+        if fb_put("accounting/expenses", yangi):
+            eslat("✅ Saqlandi!")
+            st.session_state.versiya += 1
+            st.rerun()
         else:
-            st.warning("Ismni kiriting!")
-    bazalar = royxat(fb_get("accounting/students"))
-    if bazalar:
-        df = pd.DataFrame(bazalar)
-        df.columns = ["Ism", "Sinf", "Narx", "Telefon"][:len(df.columns)]
-        stat_cards([("👨‍🎓", "Bazadagi o'quvchilar", len(df), "#6366f1")])
-        st.dataframe(df, use_container_width=True, hide_index=True)
-    else:
-        st.info("Baza bo'sh")
+            st.error("⚠️ Bulutga yozib bo'lmadi!")
+    excel_tugma(df, "Xarajatlar", "Xarajatlar", "xl_xar")
 
-# ================== ⚙️ SOZLAMALAR ==================
-elif sahifa == "⚙️ Sozlamalar":
+
+# ------------------------------------------------------------
+# 👨‍🎓 BAZA
+# ------------------------------------------------------------
+BAZA_USTUN = ["Ism", "Sinf", "Narx", "Telefon"]
+
+
+def baza_df(bazalar):
+    df = pd.DataFrame([{"Ism": b.get("name", ""), "Sinf": b.get("cls", ""),
+                        "Narx": num(b.get("price")), "Telefon": b.get("phone", "")}
+                       for b in bazalar], columns=BAZA_USTUN)
+    return df.astype({"Narx": float})
+
+
+def df_baza(df):
+    out = []
+    for r in df.to_dict("records"):
+        ism = r["Ism"].strip() if isinstance(r["Ism"], str) else ""
+        if ism:
+            out.append({"name": ism,
+                        "cls": r["Sinf"].strip() if isinstance(r["Sinf"], str) else "",
+                        "price": num(r["Narx"]),
+                        "phone": r["Telefon"].strip() if isinstance(r["Telefon"], str) else ""})
+    return out
+
+
+def sahifa_baza():
+    hero("👨‍🎓 O'quvchilar bazasi", "Bir marta kiritiladi — har oy ishlatiladi")
+    bazalar = royxat(oqi("accounting/students"))
+    with st.form("baza_forma", clear_on_submit=True):
+        c1, c2, c3, c4 = st.columns([2, 1, 1, 1])
+        ism = c1.text_input("Ism Sharif")
+        sinf = c2.text_input("Sinf (1-A)")
+        narx = c3.number_input("Oylik narx", min_value=0, step=10000,
+                               value=int(num(cfg.get("defaultPrice"))))
+        tel = c4.text_input("Telefon")
+        yubor = st.form_submit_button("➕ Qo'shish", type="primary", disabled=not ADMIN, **KENG)
+    if yubor:
+        if not ism.strip():
+            st.warning("Ismni kiriting!")
+        elif any(str(b.get("name", "")).strip().lower() == ism.strip().lower()
+                 and str(b.get("cls", "")).strip().lower() == sinf.strip().lower() for b in bazalar):
+            st.warning("Bu o'quvchi allaqachon bazada bor!")
+        else:
+            bazalar.append({"name": ism.strip(), "cls": sinf.strip(), "price": narx, "phone": tel.strip()})
+            if fb_put("accounting/students", bazalar):
+                eslat("✅ Qo'shildi!")
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo'lmadi!")
+
+    if ADMIN:
+        with st.expander("📤 Excel/CSV fayldan ommaviy yuklash"):
+            st.caption("Ustunlar: Ism, Sinf, Narx, Telefon (birinchi qator — sarlavha).")
+            fayl = st.file_uploader("Fayl", type=["xlsx", "csv"], label_visibility="collapsed")
+            if fayl is not None and st.button("📥 Bazaga qo'shish", key="imp"):
+                try:
+                    yuk = pd.read_csv(fayl) if fayl.name.endswith(".csv") else pd.read_excel(fayl)
+                    yuk = yuk.rename(columns=lambda c: str(c).strip().capitalize())
+                    for c in BAZA_USTUN:
+                        if c not in yuk.columns:
+                            yuk[c] = "" if c != "Narx" else 0
+                    bor = {(str(b.get("name", "")).strip().lower(), str(b.get("cls", "")).strip().lower())
+                           for b in bazalar}
+                    yangi = [b for b in df_baza(yuk[BAZA_USTUN])
+                             if (b["name"].lower(), b["cls"].lower()) not in bor]
+                    if yangi and fb_put("accounting/students", bazalar + yangi):
+                        eslat(f"✅ {len(yangi)} ta o'quvchi qo'shildi")
+                        st.rerun()
+                    else:
+                        st.info("Yangi o'quvchi topilmadi yoki saqlab bo'lmadi")
+                except Exception as e:
+                    st.error(f"Faylni o'qib bo'lmadi: {e}")
+
+    if not bazalar:
+        st.info("Baza bo'sh")
+        return
+    df = baza_df(bazalar)
+    stat_cards([("👨‍🎓", "Bazadagi o'quvchilar", len(df), "#6366f1"),
+                ("🎓", "Sinflar soni", df["Sinf"].replace("", pd.NA).nunique(), "#8b5cf6")])
+    tahrir = st.data_editor(
+        df, hide_index=True, num_rows="dynamic" if ADMIN else "fixed", disabled=not ADMIN,
+        **KENG, key=f"baza_ed_{st.session_state.versiya}",
+        column_config={"Narx": st.column_config.NumberColumn(step=10000, min_value=0)})
+    if ADMIN and st.button("💾 O'zgarishlarni saqlash", key="baza_saqla", **KENG):
+        if fb_put("accounting/students", df_baza(tahrir)):
+            eslat("✅ Saqlandi!")
+            st.session_state.versiya += 1
+            st.rerun()
+        else:
+            st.error("⚠️ Bulutga yozib bo'lmadi!")
+    excel_tugma(df, "Baza", "Oquvchilar_bazasi", "xl_baza")
+
+
+# ------------------------------------------------------------
+# ⚙️ SOZLAMALAR
+# ------------------------------------------------------------
+def sahifa_sozlamalar():
     hero("⚙️ Sozlamalar")
     if not ADMIN:
         st.warning("Faqat asosiy admin o'zgartira oladi!")
-    else:
+        return
+    with st.form("sozlama_forma"):
+        st.markdown("**🔐 Asosiy akkaunt**")
         c1, c2 = st.columns(2)
         u1 = c1.text_input("Asosiy login", value=cfg.get("user", ""))
-        p1 = c2.text_input("Asosiy parol", value=cfg.get("pass", ""))
+        p1 = c2.text_input(f"Yangi parol (bo'sh = o'zgarmaydi, kamida {MIN_PAROL} belgi)", type="password")
         st.markdown("**👥 Ikkinchi akkaunt (o'rinbosar)**")
         c1, c2, c3 = st.columns(3)
         u2 = c1.text_input("2-akkaunt login (bo'sh = o'chirilgan)", value=cfg.get("user2", ""))
-        p2 = c2.text_input("2-akkaunt parol", value=cfg.get("pass2", ""))
-        r2 = c3.selectbox("Huquqi", ["view", "full"], index=0 if cfg.get("role2") != "full" else 1)
+        p2 = c2.text_input("2-akkaunt yangi paroli (bo'sh = o'zgarmaydi)", type="password")
+        r2 = c3.selectbox("Huquqi", ["view", "full"], index=1 if cfg.get("role2") == "full" else 0)
+        st.markdown("**🏫 Muassasa**")
         c1, c2 = st.columns(2)
         org = c1.text_input("Muassasa nomi", value=cfg.get("orgName", ""))
-        tel = c2.text_input("Telefon (parol tiklash)", value=cfg.get("phone", ""))
+        tel = c2.text_input("Telefon (parolni tiklash uchun)", value=cfg.get("phone", ""))
         c1, c2 = st.columns(2)
-        tg = c1.text_input("Telegram Bot Token", value=cfg.get("tgToken", ""))
-        ch = c2.text_input("Telegram Chat ID", value=cfg.get("chatId", ""))
-        if st.button("💾 Saqlash", type="primary"):
-            yangi = {"user": u1 or "admin", "pass": p1 or "123", "user2": u2, "pass2": p2,
-                     "role2": r2, "orgName": org or "Maktab", "phone": tel,
-                     "tgToken": tg, "chatId": ch,
-                     "defaultPrice": cfg.get("defaultPrice", 0),
-                     "monthlyPlan": cfg.get("monthlyPlan", 0)}
+        narx = c1.number_input("Standart oylik narx", min_value=0, step=10000,
+                               value=int(num(cfg.get("defaultPrice"))))
+        reja = c2.number_input("Oylik tushum rejasi", min_value=0, step=100000,
+                               value=int(num(cfg.get("monthlyPlan"))))
+        st.markdown("**📨 Telegram**")
+        c1, c2 = st.columns(2)
+        tg = c1.text_input("Bot Token", value=cfg.get("tgToken", ""), type="password")
+        ch = c2.text_input("Chat ID", value=cfg.get("chatId", ""))
+        saqla = st.form_submit_button("💾 Saqlash", type="primary", **KENG)
+
+    if saqla:
+        xato = None
+        if not u1.strip():
+            xato = "Asosiy login bo'sh bo'lmasin."
+        elif p1 and len(p1) < MIN_PAROL:
+            xato = f"Parol kamida {MIN_PAROL} belgi bo'lsin."
+        elif u2.strip() and u2.strip() == u1.strip():
+            xato = "Ikkala akkaunt logini bir xil bo'lmasin."
+        elif u2.strip() and not p2 and not cfg.get("pass2"):
+            xato = "2-akkaunt uchun parol kiriting."
+        elif p2 and len(p2) < MIN_PAROL:
+            xato = f"2-akkaunt paroli kamida {MIN_PAROL} belgi bo'lsin."
+        if xato:
+            st.error(xato)
+        else:
+            yangi = {**cfg,
+                     "user": u1.strip(), "pass": hash_pw(p1) if p1 else cfg.get("pass", ""),
+                     "user2": u2.strip(), "pass2": hash_pw(p2) if p2 else cfg.get("pass2", ""),
+                     "role2": r2, "orgName": org.strip() or "Maktab", "phone": tel.strip(),
+                     "tgToken": tg.strip(), "chatId": ch.strip(),
+                     "defaultPrice": narx, "monthlyPlan": reja}
+            if not u2.strip():
+                yangi["pass2"] = ""
             if fb_put("accounting/config", yangi):
                 st.session_state.cfg = yangi
+                if p1:
+                    st.session_state.standart_parol = False
                 st.success("✅ Saqlandi!")
             else:
                 st.error("Bulutga yozib bo'lmadi!")
+
+    st.markdown("---")
+    c1, c2 = st.columns(2)
+    with c1:
+        if st.button("📨 Telegramni sinash", **KENG):
+            st.success("Xabar yuborildi ✅") if tg_yubor(cfg, "✅ Maktab Buxgalteriya: test xabari") \
+                else st.error("Yuborib bo'lmadi — token va chat ID ni tekshiring.")
+    with c2:
+        zaxira = {"data": st.session_state.data,
+                  "students": oqi("accounting/students", yangi=True),
+                  "payments": oqi("accounting/payments", yangi=True),
+                  "expenses": oqi("accounting/expenses", yangi=True)}
+        st.download_button("💾 To'liq zaxira nusxa (JSON)",
+                           json.dumps(zaxira, ensure_ascii=False, indent=1).encode("utf-8"),
+                           file_name=f"zaxira_{date.today()}.json", mime="application/json", **KENG)
+
+
+# ------------------------------------------------------------
+# SIDEBAR + YO'NALTIRISH
+# ------------------------------------------------------------
+SAHIFALAR = {
+    "🏠 Dashboard": sahifa_dashboard, "💰 Hisob": sahifa_hisob,
+    "📅 Kunlik davomat": sahifa_davomat, "📊 Taqqoslash": sahifa_taqqoslash,
+    "🔴 Qarzdorlar": sahifa_qarzdorlar, "📈 Yillik": sahifa_yillik,
+    "🧾 To'lovlar": sahifa_tolovlar, "💸 Xarajatlar": sahifa_xarajatlar,
+    "👨‍🎓 Baza": sahifa_baza, "⚙️ Sozlamalar": sahifa_sozlamalar,
+}
+
+with st.sidebar:
+    st.markdown(f"""<div style="text-align:center; padding:8px 0 16px;">
+        <div style="font-size:40px;">☁️</div>
+        <div style="font-weight:800; font-size:16px; color:#fff;">{html.escape(cfg.get('orgName', 'Maktab'))}</div>
+        <div style="font-size:11px; color:#64748b;">{'Admin' if ADMIN else 'Faqat ko‘rish'} rejimi</div></div>""",
+                unsafe_allow_html=True)
+    sahifa = st.radio("Bo'lim", list(SAHIFALAR), label_visibility="collapsed")
+    st.markdown("---")
+    if st.button("🔄 Bulutdan yangilash", **KENG):
+        _kesh_oqi.clear()
+        bulutdan_yukla()
+        st.session_state.versiya += 1
+        st.rerun()
+    if st.button("🚪 Chiqish", **KENG):
+        st.session_state.clear()
+        st.rerun()
+    st.caption("Python + Streamlit 💛")
+
+if st.session_state.get("flash"):
+    st.toast(st.session_state.pop("flash"))
+
+SAHIFALAR[sahifa]()
