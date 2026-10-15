@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-#  ☁️ MAKTAB BUXGALTERIYA — PRO (yaxshilangan versiya)
+#  🏫 MAKTAB BUXGALTERIYA — School Admin Dashboard uslubida
 # ============================================================
 import hashlib
 import hmac
@@ -39,7 +39,7 @@ STANDART = {
 }
 MIN_PAROL = 6
 
-st.set_page_config(page_title="Maktab Buxgalteriya", page_icon="☁️", layout="wide")
+st.set_page_config(page_title="Maktab Buxgalteriya", page_icon="🏫", layout="wide")
 
 try:
     _v = tuple(int(x) for x in re.findall(r"\d+", st.__version__)[:2])
@@ -48,130 +48,218 @@ except Exception:
 KENG = {"width": "stretch"} if _v >= (1, 50) else {"use_container_width": True}
 
 # ------------------------------------------------------------
-# DIZAYN (CSS) — yaxshilangan
+# DIZAYN (CSS) — School Admin Dashboard (Dribbble) uslubi
 # ------------------------------------------------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
     .stApp {
-        background: #0b1120;
+        background: #F6F7FB;
         font-family: 'Plus Jakarta Sans', sans-serif;
+        color: #0F172A;
     }
+
+    /* ============ SIDEBAR (oq, Dribbble uslubi) ============ */
     section[data-testid="stSidebar"] {
-        background: linear-gradient(180deg, #111a2e 0%, #0b1120 100%);
-        border-right: 1px solid #1e293b;
+        background: #FFFFFF;
+        border-right: 1px solid #E9EDF5;
     }
-    section[data-testid="stSidebar"] * { color: #cbd5e1 !important; }
+    section[data-testid="stSidebar"] * { color: #334155 !important; }
+    section[data-testid="stSidebar"] .block-container { padding-top: 1.2rem; }
+    section[data-testid="stSidebar"] hr { border-color: #E9EDF5; }
 
-    #MainMenu, footer, .stDeployButton { visibility: hidden; }
-    header[data-testid="stHeader"] { background: transparent; }
-    .block-container { padding-top: 1.1rem; max-width: 1280px; }
+    .side-logo { display:flex; align-items:center; gap:11px; padding: 6px 6px 14px; }
+    .side-logo .lg {
+        width:44px; height:44px; border-radius:13px; flex-shrink:0;
+        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        display:flex; align-items:center; justify-content:center;
+        font-size:22px;
+        box-shadow:0 8px 18px rgba(79,70,229,.30);
+    }
+    .side-logo .tt { font-weight:800; font-size:15.5px; color:#0F172A !important; line-height:1.15; }
+    .side-logo .ss { font-size:10.5px; color:#94A3B8 !important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 
+    /* navigatsiya (radio -> menyu) */
+    [data-testid="stSidebar"] div[role="radiogroup"] { gap: 4px !important; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] {
+        padding: 9px 13px;
+        border-radius: 12px;
+        border: 1px solid transparent;
+        transition: .15s;
+        background: transparent;
+        margin: 0;
+    }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child { display: none; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:hover { background:#F1F5F9; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) {
+        background: linear-gradient(135deg,#4F46E5,#6366F1);
+        box-shadow: 0 6px 16px rgba(79,70,229,.30);
+    }
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) div,
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) p {
+        color:#fff !important; font-weight:700;
+    }
+
+    /* foydalanuvchi kartasi */
+    .user-card {
+        background: linear-gradient(135deg,#EEF2FF,#F5F3FF);
+        border: 1px solid #E0E7FF;
+        border-radius: 16px;
+        padding: 12px 14px;
+        display: flex; align-items: center; gap: 10px;
+    }
+    .user-card .av {
+        width:38px; height:38px; border-radius:11px; flex-shrink:0;
+        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        display:flex; align-items:center; justify-content:center; font-size:17px;
+    }
+    .user-card .nm { font-weight:700; font-size:13px; color:#0F172A !important; }
+    .user-card .rl { font-size:11px; color:#64748B !important; font-weight:600; }
+
+    /* ============ HEADER / HERO (oq karta) ============ */
     .hero {
-        background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 55%, #9333ea 100%);
+        background: #FFFFFF;
+        border: 1px solid #E9EDF5;
         border-radius: 20px;
-        padding: 24px 28px;
-        color: #fff;
+        padding: 22px 26px;
         margin-bottom: 18px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 10px 28px rgba(79,70,229,.32);
+        display: flex; align-items: center; justify-content: space-between; gap: 14px;
+        box-shadow: 0 2px 12px rgba(15,23,42,.05);
+        position: relative; overflow: hidden;
     }
-    .hero::after {
-        content:'';
-        position:absolute; right:-40px; top:-50px;
-        width:200px; height:200px;
-        background:rgba(255,255,255,.1);
-        border-radius:50%;
+    .hero::before {
+        content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
+        background: linear-gradient(180deg,#4F46E5,#8B5CF6);
     }
-    .hero h1 {
-        margin:0; font-size:24px; font-weight:800;
-        color:#fff !important; letter-spacing:-0.3px;
+    .hero h1 { margin:0; font-size:23px; font-weight:800; color:#0F172A !important; letter-spacing:-0.3px; }
+    .hero p { margin:4px 0 0; color:#64748B; font-size:13.5px; font-weight:500; }
+    .hero .hero-date {
+        flex-shrink: 0;
+        background:#EEF2FF; color:#4F46E5 !important;
+        border:1px solid #E0E7FF;
+        font-weight:700; font-size:12.5px;
+        padding:8px 14px; border-radius:999px;
     }
-    .hero p { margin:5px 0 0; opacity:.88; font-size:13.5px; }
 
+    /* ============ STAT KARTALAR (ikonka kvadrat bilan) ============ */
     .stats-row {
         display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(145px,1fr));
-        gap:12px; margin:14px 0 18px;
+        grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+        gap:14px; margin:6px 0 18px;
     }
     .stat-card {
-        background: linear-gradient(145deg,#151e31,#101828);
-        border: 1px solid #253048;
-        border-radius: 16px;
-        padding: 14px 16px;
-        position: relative;
-        transition: transform .15s ease;
+        background:#FFFFFF;
+        border:1px solid #E9EDF5;
+        border-radius:18px;
+        padding:16px;
+        display:flex; align-items:center; gap:12px;
+        box-shadow:0 2px 10px rgba(15,23,42,.04);
+        transition: transform .16s ease, box-shadow .16s ease;
     }
-    .stat-card:hover { transform: translateY(-2px); }
-    .stat-card::before {
-        content:'';
-        position:absolute; top:0; left:0; right:0;
-        height:3px; border-radius:16px 16px 0 0;
-        background: var(--ac,#6366f1);
+    .stat-card:hover { transform:translateY(-3px); box-shadow:0 10px 22px rgba(15,23,42,.09); }
+    .stat-ic {
+        width:46px; height:46px; border-radius:14px; flex-shrink:0;
+        display:flex; align-items:center; justify-content:center; font-size:21px;
     }
-    .stat-card .lbl { font-size:11.5px; color:#94a3b8; font-weight:600; }
-    .stat-card .val { font-size:20px; font-weight:800; color:#f1f5f9; margin-top:3px; }
+    .stat-card .lbl { font-size:11.5px; color:#94A3B8; font-weight:700; letter-spacing:.2px; }
+    .stat-card .val { font-size:18px; font-weight:800; color:#0F172A; margin-top:2px; }
 
+    /* ============ TUGMALAR ============ */
     .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
-        border-radius: 11px; font-weight: 700;
-        border: 1px solid #253048;
-        background: #151e31; color: #f1f5f9;
-        transition: .18s;
+        border-radius: 12px; font-weight: 700;
+        border: 1px solid #E2E8F0;
+        background: #FFFFFF; color: #334155;
+        box-shadow: 0 1px 3px rgba(15,23,42,.05);
+        transition: .16s;
     }
     .stButton > button:hover, .stDownloadButton > button:hover {
-        transform: translateY(-1px); border-color:#6366f1;
+        transform: translateY(-1px);
+        border-color:#C7D2FE; color:#4F46E5;
+        box-shadow: 0 6px 14px rgba(79,70,229,.12);
     }
     .stButton > button[kind="primary"],
     .stFormSubmitButton > button[kind="primary"],
     .stFormSubmitButton > button[kind="primaryFormSubmit"] {
-        background: linear-gradient(135deg,#6366f1,#8b5cf6);
-        border: none; color:#fff;
+        background: linear-gradient(135deg,#4F46E5,#6D28D9);
+        border: none; color:#fff !important;
+        box-shadow: 0 6px 16px rgba(79,70,229,.30);
+    }
+    .stButton > button[kind="primary"]:hover { filter:brightness(1.07); color:#fff !important; }
+
+    /* ============ INPUTLAR ============ */
+    .stTextInput input, .stNumberInput input, .stDateInput input,
+    .stSelectbox div[data-baseweb="select"] > div,
+    .stMultiselect div[data-baseweb="select"] > div,
+    div[data-baseweb="textarea"] > div {
+        background: #FFFFFF !important;
+        border: 1px solid #E2E8F0 !important;
+        border-radius: 12px !important;
+        color: #0F172A !important;
+    }
+    .stTextInput input:focus, .stNumberInput input:focus {
+        border-color:#A5B4FC !important;
+        box-shadow: 0 0 0 3px rgba(99,102,241,.12) !important;
     }
 
-    .stTextInput input, .stNumberInput input, .stDateInput input,
-    .stSelectbox div[data-baseweb="select"] > div {
-        background: #101828 !important;
-        border: 1px solid #253048 !important;
-        border-radius: 11px !important;
-        color: #f1f5f9 !important;
-    }
+    /* ============ JADVAL / FORM / EXPANDER ============ */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border: 1px solid #253048;
-        border-radius: 14px;
+        border: 1px solid #E9EDF5;
+        border-radius: 16px;
         overflow: hidden;
+        background:#fff;
+        box-shadow: 0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stMetric"] {
-        background: linear-gradient(145deg,#151e31,#101828);
-        border: 1px solid #253048;
-        border-radius: 14px;
-        padding: 12px 16px;
+        background:#fff; border:1px solid #E9EDF5; border-radius:16px;
+        padding: 14px 18px;
+        box-shadow: 0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stForm"] {
-        border: 1px solid #253048;
-        border-radius: 14px;
-        background:#0f1626;
-        padding: 8px 12px 4px;
+        border: 1px solid #E9EDF5;
+        border-radius: 16px;
+        background:#FFFFFF;
+        padding: 10px 14px 6px;
+        box-shadow: 0 2px 10px rgba(15,23,42,.04);
     }
+    div[data-testid="stExpander"] {
+        border: 1px solid #E9EDF5 !important;
+        border-radius: 16px !important;
+        background:#fff;
+        box-shadow: 0 2px 10px rgba(15,23,42,.04);
+    }
+    div[data-testid="stAlert"] { border-radius: 14px; }
+
+    /* ============ TABS ============ */
     .stTabs [data-baseweb="tab-list"] { gap: 6px; }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 11px;
-        background:#151e31;
-        border:1px solid #253048;
-        font-weight:700;
-        padding: 7px 14px;
+        border-radius: 12px;
+        background:#EEF1F8;
+        border:1px solid transparent;
+        font-weight:700; padding: 7px 15px; color:#475569;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg,#6366f1,#8b5cf6) !important;
+        background: linear-gradient(135deg,#4F46E5,#6366F1) !important;
         color:#fff !important;
+        box-shadow: 0 6px 14px rgba(79,70,229,.25);
     }
-    h1, h2, h3 { color: #f1f5f9 !important; font-weight: 800 !important; }
+
+    h1, h2, h3, h4 { color:#0F172A !important; font-weight:800 !important; }
+    hr { border-color:#E9EDF5; }
+
+    div[data-testid="stProgress"] > div { background:#E2E8F0; border-radius:999px; }
+    div[data-testid="stProgress"] > div > div {
+        background: linear-gradient(90deg,#4F46E5,#8B5CF6) !important;
+    }
+
+    ::-webkit-scrollbar { width:8px; height:8px; }
+    ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:8px; }
+    ::-webkit-scrollbar-track { background:transparent; }
 
     @media (max-width: 640px) {
-        .hero { padding: 16px 16px; border-radius: 16px; }
+        .hero { padding: 16px 16px; border-radius: 16px; flex-direction:column; align-items:flex-start; }
         .hero h1 { font-size: 19px; }
-        .stat-card .val { font-size: 17px; }
+        .stat-card .val { font-size: 16px; }
         .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
     }
 </style>
@@ -332,9 +420,13 @@ def eslat(matn):
 # DIZAYN KOMPONENTLARI
 # ------------------------------------------------------------
 def hero(sarlavha, ostki=""):
+    bugun = datetime.now().strftime("%d.%m.%Y")
     st.markdown(
-        f"""<div class="hero"><h1>{html.escape(sarlavha)}</h1>
-        <p>{html.escape(ostki)}</p></div>""",
+        f"""<div class="hero">
+            <div><h1>{html.escape(sarlavha)}</h1>
+            <p>{html.escape(ostki)}</p></div>
+            <div class="hero-date">📅 {bugun}</div>
+        </div>""",
         unsafe_allow_html=True
     )
 
@@ -342,9 +434,13 @@ def hero(sarlavha, ostki=""):
 def stat_cards(kartalar):
     h = '<div class="stats-row">'
     for icon, nom, qiymat, rang in kartalar:
-        h += f"""<div class="stat-card" style="--ac:{rang}">
-            <div class="lbl">{icon} {html.escape(str(nom))}</div>
-            <div class="val">{html.escape(str(qiymat))}</div></div>"""
+        h += f"""<div class="stat-card">
+            <div class="stat-ic" style="background:{rang}1A;color:{rang}">{icon}</div>
+            <div class="stat-tx">
+                <div class="lbl">{html.escape(str(nom))}</div>
+                <div class="val">{html.escape(str(qiymat))}</div>
+            </div>
+        </div>"""
     h += "</div>"
     st.markdown(h, unsafe_allow_html=True)
 
@@ -470,13 +566,13 @@ def parol_tiklash():
 
 def kirish_oynasi():
     st.markdown("""
-    <div style="text-align:center; padding:24px 0 10px;">
-        <div style="font-size:52px;">☁️</div>
-        <h1 style="margin:0; background:linear-gradient(90deg,#a5b4fc,#f0abfc);
-        -webkit-background-clip:text; background-clip:text; color:transparent;
-        font-size:28px; font-weight:800;">
-        Cloud Buxgalteriya</h1>
-        <p style="color:#94a3b8; margin-top:4px;">Talabalar hisob-kitobi tizimi</p>
+    <div style="text-align:center; padding:34px 0 16px;">
+        <div style="width:74px;height:74px;margin:0 auto 14px;border-radius:20px;
+        background:linear-gradient(135deg,#4F46E5,#8B5CF6);display:flex;align-items:center;
+        justify-content:center;font-size:35px;box-shadow:0 14px 30px rgba(79,70,229,.35);">🏫</div>
+        <h1 style="margin:0;color:#0F172A;font-size:26px;font-weight:800;">
+        Maktab Buxgalteriya</h1>
+        <p style="color:#64748B;margin-top:6px;font-weight:500;">Talabalar hisob-kitobi — Admin Panel</p>
     </div>""", unsafe_allow_html=True)
 
     _, c, _ = st.columns([1.15, 2, 1.15])
@@ -524,11 +620,11 @@ def sahifa_dashboard():
     foiz = round(max(jami_sof - jami_q, 0) / jami_sof * 100) if jami_sof > 0 else 0
 
     stat_cards([
-        ("👥", "O‘quvchi yozuvlari", len(barcha), "#6366f1"),
-        ("💰", "Umumiy tushum", som(jami_t), "#10b981"),
-        ("🔴", "Umumiy qarz", som(jami_q), "#ef4444"),
-        ("📈", "Undirish darajasi", f"{foiz}%", "#8b5cf6"),
-        ("📚", "To‘ldirilgan oylar", f"{sum(1 for m in hamma.values() if m)}/12", "#f59e0b"),
+        ("👥", "O‘quvchi yozuvlari", len(barcha), "#4F46E5"),
+        ("💰", "Umumiy tushum", som(jami_t), "#10B981"),
+        ("🔴", "Umumiy qarz", som(jami_q), "#EF4444"),
+        ("📈", "Undirish darajasi", f"{foiz}%", "#8B5CF6"),
+        ("📚", "To‘ldirilgan oylar", f"{sum(1 for m in hamma.values() if m)}/12", "#F59E0B"),
     ])
 
     reja = num(cfg.get("monthlyPlan"))
@@ -545,7 +641,7 @@ def sahifa_dashboard():
             "Qarz": sum(qarz(s) for s in m)
         } for oy, m in hamma.items()])
         st.markdown("#### 📊 Oylar kesimida")
-        oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#6366f1", "#ef4444"])
+        oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#4F46E5", "#EF4444"])
 
     c1, c2, c3 = st.columns(3)
     with c1:
@@ -585,7 +681,7 @@ def sahifa_dashboard():
         kel = sum(1 for v in dav.values() if v is True)
         kelma = sum(1 for v in dav.values() if v is False)
         if dav:
-            stat_cards([("✅", "Keldi", kel, "#10b981"), ("❌", "Kelmadi", kelma, "#ef4444")])
+            stat_cards([("✅", "Keldi", kel, "#10B981"), ("❌", "Kelmadi", kelma, "#EF4444")])
         else:
             st.info("Bugun hali belgilanmagan")
 
@@ -728,12 +824,12 @@ def sahifa_hisob():
     joriy = df_oy(tahrir) if len(tahrir) else []
     if joriy:
         stat_cards([
-            ("💰", "Tushum", fmt(sum(num(s["price"]) for s in joriy)), "#6366f1"),
-            ("🎗", "Chegirma", fmt(sum(num(s["disc"]) for s in joriy)), "#f59e0b"),
-            ("🍽", "Ovqat", fmt(sum(num(s["food"]) for s in joriy)), "#ef4444"),
-            ("✅", "Sof foyda", fmt(sum(sof(s) for s in joriy)), "#10b981"),
-            ("👥", "O‘quvchi", len(joriy), "#8b5cf6"),
-            ("🔴", "Qarz", fmt(sum(qarz(s) for s in joriy)), "#ef4444"),
+            ("💰", "Tushum", fmt(sum(num(s["price"]) for s in joriy)), "#4F46E5"),
+            ("🎗", "Chegirma", fmt(sum(num(s["disc"]) for s in joriy)), "#F59E0B"),
+            ("🍽", "Ovqat", fmt(sum(num(s["food"]) for s in joriy)), "#EF4444"),
+            ("✅", "Sof foyda", fmt(sum(sof(s) for s in joriy)), "#10B981"),
+            ("👥", "O‘quvchi", len(joriy), "#8B5CF6"),
+            ("🔴", "Qarz", fmt(sum(qarz(s) for s in joriy)), "#EF4444"),
         ])
         exc = pd.DataFrame([{
             "Ism": s["name"], "Sinf": s["cls"], "Narx": s["price"],
@@ -796,9 +892,9 @@ def sahifa_davomat():
     kelma = int((tahrir["Holat"] == "Kelmadi").sum())
     belgisiz = int((tahrir["Holat"] == "—").sum())
     stat_cards([
-        ("✅", "Keldi", kel, "#10b981"),
-        ("❌", "Kelmadi", kelma, "#ef4444"),
-        ("⏳", "Belgilanmagan", belgisiz, "#f59e0b")
+        ("✅", "Keldi", kel, "#10B981"),
+        ("❌", "Kelmadi", kelma, "#EF4444"),
+        ("⏳", "Belgilanmagan", belgisiz, "#F59E0B")
     ])
 
     if ADMIN and st.button("💾 Davomatni saqlash", type="primary", **KENG):
@@ -854,7 +950,7 @@ def sahifa_taqqoslash():
         "Davomat %": round(sum(1 for s in g if s.get("att", True)) / len(g) * 100)
     } for c, g in sorted(groups.items())])
     st.dataframe(df, hide_index=True, **KENG)
-    st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#6366f1", "#ef4444"])
+    st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#4F46E5", "#EF4444"])
     excel_tugma(df, oy, f"Taqqoslash_{oy}", "xl_taqq")
 
 
@@ -888,9 +984,9 @@ def sahifa_qarzdorlar():
         df = df[df["Ism"].str.lower().str.contains(qidir.strip().lower(), regex=False)]
 
     stat_cards([
-        ("🔴", "Umumiy qarz", som(df["Qarz"].sum()), "#ef4444"),
-        ("👥", "Qarzdor yozuvlar", len(df), "#f59e0b"),
-        ("🧑", "Qarzdor o‘quvchilar", df["Ism"].nunique(), "#8b5cf6")
+        ("🔴", "Umumiy qarz", som(df["Qarz"].sum()), "#EF4444"),
+        ("👥", "Qarzdor yozuvlar", len(df), "#F59E0B"),
+        ("🧑", "Qarzdor o‘quvchilar", df["Ism"].nunique(), "#8B5CF6")
     ])
 
     t1, t2 = st.tabs(["📅 Oylar bo‘yicha", "🧑 O‘quvchilar bo‘yicha"])
@@ -947,11 +1043,11 @@ def sahifa_yillik():
     df = pd.DataFrame(rows)
     st.dataframe(df, hide_index=True, **KENG)
     oylik_grafik(df, ["Tushum", "Ovqat", "Xarajat", "Sof foyda"],
-                 ["#6366f1", "#f59e0b", "#ef4444", "#10b981"])
+                 ["#4F46E5", "#F59E0B", "#EF4444", "#10B981"])
     stat_cards([
-        ("💰", "Yillik tushum", som(df["Tushum"].sum()), "#6366f1"),
-        ("💸", "Xarajat", som(df["Xarajat"].sum()), "#f59e0b"),
-        ("🏆", "Sof foyda", som(df["Sof foyda"].sum()), "#10b981")
+        ("💰", "Yillik tushum", som(df["Tushum"].sum()), "#4F46E5"),
+        ("💸", "Xarajat", som(df["Xarajat"].sum()), "#F59E0B"),
+        ("🏆", "Sof foyda", som(df["Sof foyda"].sum()), "#10B981")
     ])
     excel_tugma(df, "Yillik", "Yillik_hisobot", "xl_yil")
 
@@ -1023,12 +1119,12 @@ def sahifa_tolovlar():
 
     bu_oy = f"{date.today().year}-{date.today().month:02d}"
     stat_cards([
-        ("💰", "Jami to‘lovlar", som(sum(num(p.get("amount")) for p in payments)), "#10b981"),
+        ("💰", "Jami to‘lovlar", som(sum(num(p.get("amount")) for p in payments)), "#10B981"),
         ("📅", "Shu oy", som(sum(
             num(p.get("amount")) for p in payments
             if str(p.get("date", ""))[:7] == bu_oy
-        )), "#6366f1"),
-        ("🧾", "Yozuvlar soni", len(payments), "#f59e0b")
+        )), "#4F46E5"),
+        ("🧾", "Yozuvlar soni", len(payments), "#F59E0B")
     ])
 
     df = pd.DataFrame([{
@@ -1095,11 +1191,11 @@ def sahifa_xarajatlar():
 
     bu_oy = f"{date.today().year}-{date.today().month:02d}"
     stat_cards([
-        ("💸", "Jami xarajat", som(sum(num(x.get("amount")) for x in expenses)), "#ef4444"),
+        ("💸", "Jami xarajat", som(sum(num(x.get("amount")) for x in expenses)), "#EF4444"),
         ("📅", "Shu oy", som(sum(
             num(x.get("amount")) for x in expenses
             if str(x.get("date", ""))[:7] == bu_oy
-        )), "#f59e0b")
+        )), "#F59E0B")
     ])
 
     df = pd.DataFrame([{
@@ -1227,8 +1323,8 @@ def sahifa_baza():
 
     df = baza_df(bazalar)
     stat_cards([
-        ("👨‍🎓", "Bazadagi o‘quvchilar", len(df), "#6366f1"),
-        ("🎓", "Sinflar soni", df["Sinf"].replace("", pd.NA).nunique(), "#8b5cf6")
+        ("👨‍🎓", "Bazadagi o‘quvchilar", len(df), "#4F46E5"),
+        ("🎓", "Sinflar soni", df["Sinf"].replace("", pd.NA).nunique(), "#8B5CF6")
     ])
     tahrir = st.data_editor(
         df, hide_index=True,
@@ -1251,7 +1347,7 @@ def sahifa_baza():
 # ⚙️ SOZLAMALAR
 # ------------------------------------------------------------
 def sahifa_sozlamalar():
-    hero("⚙️ Sozlamalar")
+    hero("⚙️ Sozlamalar", "Akkaunt, muassasa va Telegram sozlamalari")
     if not ADMIN:
         st.warning("Faqat asosiy admin o‘zgartira oladi!")
         return
@@ -1268,7 +1364,11 @@ def sahifa_sozlamalar():
         c1, c2, c3 = st.columns(3)
         u2 = c1.text_input("2-akkaunt login (bo‘sh = o‘chirilgan)", value=cfg.get("user2", ""))
         p2 = c2.text_input("2-akkaunt yangi paroli (bo‘sh = o‘zgarmaydi)", type="password")
-        r2 = c3.selectbox("Huquqi", ["view", "full"], index=1 if cfg.get("role2") == "full" else 0)
+        r2 = c3.selectbox(
+            "Huquqi", ["view", "full"],
+            format_func=lambda x: "👀 Faqat ko‘rish" if x == "view" else "🛠 To‘liq",
+            index=1 if cfg.get("role2") == "full" else 0
+        )
 
         st.markdown("**🏫 Muassasa**")
         c1, c2 = st.columns(2)
@@ -1307,90 +1407,70 @@ def sahifa_sozlamalar():
         else:
             yangi = {
                 **cfg,
-                "user": u1.strip(),
-                "pass": hash_pw(p1) if p1 else cfg.get("pass", ""),
-                "user2": u2.strip(),
-                "pass2": hash_pw(p2) if p2 else cfg.get("pass2", ""),
-                "role2": r2,
-                "orgName": org.strip() or "Maktab",
-                "phone": tel.strip(),
-                "tgToken": tg.strip(),
-                "chatId": ch.strip(),
-                "defaultPrice": narx,
-                "monthlyPlan": reja
+                "user": u1.strip(), "user2": u2.strip(), "role2": r2,
+                "orgName": org.strip(), "phone": tel.strip(),
+                "defaultPrice": narx, "monthlyPlan": reja,
+                "tgToken": tg.strip(), "chatId": ch.strip()
             }
-            if not u2.strip():
-                yangi["pass2"] = ""
+            if p1:
+                yangi["pass"] = hash_pw(p1)
+            if p2:
+                yangi["pass2"] = hash_pw(p2)
             if fb_put("accounting/config", yangi):
                 st.session_state.cfg = yangi
-                if p1:
-                    st.session_state.standart_parol = False
-                st.success("✅ Saqlandi!")
+                eslat("✅ Sozlamalar saqlandi!")
+                st.rerun()
             else:
-                st.error("Bulutga yozib bo‘lmadi!")
+                st.error("⚠️ Bulutga yozib bo‘lmadi!")
 
-    st.markdown("---")
-    c1, c2 = st.columns(2)
-    with c1:
-        if st.button("📨 Telegramni sinash", **KENG):
-            st.success("Xabar yuborildi ✅") if tg_yubor(cfg, "✅ Maktab Buxgalteriya: test xabari") \
-                else st.error("Yuborib bo‘lmadi — token va chat ID ni tekshiring.")
-    with c2:
-        zaxira = {
-            "data": st.session_state.data,
-            "students": oqi("accounting/students", yangi=True),
-            "payments": oqi("accounting/payments", yangi=True),
-            "expenses": oqi("accounting/expenses", yangi=True)
-        }
-        st.download_button(
-            "💾 To‘liq zaxira nusxa (JSON)",
-            json.dumps(zaxira, ensure_ascii=False, indent=1).encode("utf-8"),
-            file_name=f"zaxira_{date.today()}.json",
-            mime="application/json", **KENG
-        )
+    if ADMIN and cfg.get("tgToken") and cfg.get("chatId"):
+        if st.button("📨 Test xabar yuborish", **KENG):
+            ok = tg_yubor(cfg, f"✅ «{cfg.get('orgName', 'Maktab')}» buxgalteriyasi Telegram ulanishi ishlayapti!")
+            (st.success("Test xabar yuborildi!") if ok else st.error("Yuborib bo‘lmadi!"))
 
 
 # ------------------------------------------------------------
-# SIDEBAR + YO‘NALTIRISH
+# 🧭 SIDEBAR NAVIGATSIYA
 # ------------------------------------------------------------
 SAHIFALAR = {
     "🏠 Dashboard": sahifa_dashboard,
     "💰 Hisob": sahifa_hisob,
-    "📅 Kunlik davomat": sahifa_davomat,
-    "📊 Taqqoslash": sahifa_taqqoslash,
-    "🔴 Qarzdorlar": sahifa_qarzdorlar,
-    "📈 Yillik": sahifa_yillik,
     "🧾 To‘lovlar": sahifa_tolovlar,
+    "📅 Davomat": sahifa_davomat,
+    "🔴 Qarzdorlar": sahifa_qarzdorlar,
+    "📊 Taqqoslash": sahifa_taqqoslash,
+    "📈 Yillik hisobot": sahifa_yillik,
     "💸 Xarajatlar": sahifa_xarajatlar,
-    "👨‍🎓 Baza": sahifa_baza,
+    "👨‍🎓 O‘quvchilar": sahifa_baza,
     "⚙️ Sozlamalar": sahifa_sozlamalar,
 }
 
+if st.session_state.get("flash"):
+    st.success(st.session_state.pop("flash"))
+
 with st.sidebar:
-    st.markdown(f"""
-    <div style="text-align:center; padding:8px 0 16px;">
-        <div style="font-size:38px;">☁️</div>
-        <div style="font-weight:800; font-size:15px; color:#fff;">
-            {html.escape(cfg.get('orgName', 'Maktab'))}
-        </div>
-        <div style="font-size:11px; color:#64748b;">
-            {'Admin' if ADMIN else 'Faqat ko‘rish'} rejimi
+    st.markdown(f"""<div class="side-logo">
+        <div class="lg">🏫</div>
+        <div>
+            <div class="tt">{html.escape(cfg.get("orgName", "Maktab"))}</div>
+            <div class="ss">Admin Panel</div>
         </div>
     </div>""", unsafe_allow_html=True)
 
-    sahifa = st.radio("Bo‘lim", list(SAHIFALAR), label_visibility="collapsed")
+    tanlangan = st.radio("Bo‘lim", list(SAHIFALAR), label_visibility="collapsed", key="nav")
+
     st.markdown("---")
-    if st.button("🔄 Bulutdan yangilash", **KENG):
-        _kesh_oqi.clear()
-        bulutdan_yukla()
-        st.session_state.versiya += 1
-        st.rerun()
+
+    st.markdown(f"""<div class="user-card">
+        <div class="av">{"👑" if ADMIN else "👀"}</div>
+        <div>
+            <div class="nm">{html.escape(str(cfg.get("user", "admin")))}</div>
+            <div class="rl">{"Asosiy admin" if ADMIN else "Ko‘rish rejimi"}</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
+
     if st.button("🚪 Chiqish", **KENG):
         st.session_state.clear()
         st.rerun()
-    st.caption("Python + Streamlit 💛")
 
-if st.session_state.get("flash"):
-    st.toast(st.session_state.pop("flash"))
-
-SAHIFALAR[sahifa]()
+SAHIFALAR[tanlangan]()
