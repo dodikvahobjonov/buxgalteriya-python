@@ -1183,13 +1183,13 @@ def sahifa_qarzdorlar():
     t1, t2 = st.tabs(["📅 Oylar bo‘yicha", "🧑 O‘quvchilar bo‘yicha"])
     with t1:
         rows = [[
-            f'<div class="cell-p">{avatar(r.Ism)}<span>{html.escape(r.Ism)}'
-            f'<div class="sub">{html.escape(r.Sinf)}</div></span></div>',
-            pill(r.Oy, "p-info"),
-            f'<span class="num">{fmt(r.Sof)}</span>',
-            f'<span class="num" style="color:#15803D">{fmt(r.To‘langan)}</span>',
-            f'<span class="num" style="color:#DC2626">{fmt(r.Qarz)}</span>'
-        ] for r in df.itertuples()]
+            f'<div class="cell-p">{avatar(r["Ism"])}<span>{html.escape(str(r["Ism"]))}'
+            f'<div class="sub">{html.escape(str(r["Sinf"]))}</div></span></div>',
+            pill(r["Oy"], "p-info"),
+            f'<span class="num">{fmt(r["Sof"])}</span>',
+            f'<span class="num" style="color:#15803D">{fmt(r["To‘langan"])}</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r["Qarz"])}</span>'
+        ] for r in df.to_dict("records")]
         st.markdown(list_card("🔴 Qarzdor yozuvlar",
                               ["O‘quvchi", "Oy", "Sof", "To‘langan", "Qarz"], rows, 430),
                     unsafe_allow_html=True)
@@ -1198,11 +1198,11 @@ def sahifa_qarzdorlar():
               .agg(Sinf=("Sinf", "first"), Oylar=("Oy", "count"), Qarz=("Qarz", "sum"))
               .sort_values("Qarz", ascending=False))
         rows = [[
-            f'<div class="cell-p">{avatar(r.Ism)}<span>{html.escape(r.Ism)}'
-            f'<div class="sub">{html.escape(str(r.Sinf))}</div></span></div>',
-            f'<span class="num">{int(r.Oylar)} oy</span>',
-            f'<span class="num" style="color:#DC2626">{fmt(r.Qarz)}</span>'
-        ] for r in gr.itertuples()]
+            f'<div class="cell-p">{avatar(r["Ism"])}<span>{html.escape(str(r["Ism"]))}'
+            f'<div class="sub">{html.escape(str(r["Sinf"]))}</div></span></div>',
+            f'<span class="num">{int(r["Oylar"])} oy</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r["Qarz"])}</span>'
+        ] for r in gr.to_dict("records")]
         st.markdown(list_card("🧑 O‘quvchilar kesimida",
                               ["O‘quvchi", "Necha oy", "Umumiy qarz"], rows, 430),
                     unsafe_allow_html=True)
@@ -1214,7 +1214,8 @@ def sahifa_qarzdorlar():
         if ADMIN and cfg.get("tgToken") and cfg.get("chatId"):
             if st.button("📨 Telegramga yuborish", **KENG):
                 matn = "🔴 Qarzdorlar ro‘yxati\n" + "\n".join(
-                    f"{r.Ism} ({r.Oy}) — {fmt(r.Qarz)}" for r in df.head(40).itertuples()
+                    f"{r['Ism']} ({r['Oy']}) — {fmt(r['Qarz'])}"
+                    for r in df.head(40).to_dict("records")
                 )
                 st.success("Yuborildi ✅") if tg_yubor(cfg, matn) else st.error("Yuborib bo‘lmadi")
 
@@ -1248,19 +1249,18 @@ def sahifa_yillik():
         })
     df = pd.DataFrame(rows_data)
 
-    rows = [[
-        pill(r.Oy, "p-info"),
-        f'<span class="num">{int(r.O‘quvchi)}</span>',
-        f'<span class="num">{fmt(r.Tushum)}</span>',
-        f'<span class="num" style="color:#B45309">{fmt(r.Chegirma)}</span>',
-        f'<span class="num" style="color:#DC2626">{fmt(r.Ovqat)}</span>',
-        f'<span class="num" style="color:#DC2626">{fmt(r.Xarajat)}</span>',
-        pill(fmt(r.Sof_foyda) if hasattr(r, "Sof_foyda") else fmt(getattr(r, "_6", 0)),
-             "p-ok" if getattr(r, "_6", r[df.columns[-1]]) >= 0 else "p-bad")
-        if False else
-        (lambda v: pill(fmt(v), "p-ok" if v >= 0 else "p-bad"))(
-            df.iloc[r.Index]["Sof foyda"])
-    ] for r in df.itertuples()]
+    rows = []
+    for r in df.to_dict("records"):
+        foyda = r["Sof foyda"]
+        rows.append([
+            pill(r["Oy"], "p-info"),
+            f'<span class="num">{int(r["O‘quvchi"])}</span>',
+            f'<span class="num">{fmt(r["Tushum"])}</span>',
+            f'<span class="num" style="color:#B45309">{fmt(r["Chegirma"])}</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r["Ovqat"])}</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r["Xarajat"])}</span>',
+            pill(fmt(foyda), "p-ok" if foyda >= 0 else "p-bad")
+        ])
     st.markdown(list_card(f"📈 {yil} — oylar kesimi",
                           ["Oy", "O‘quvchi", "Tushum", "Chegirma", "Ovqat", "Xarajat", "Sof foyda"],
                           rows, 430),
