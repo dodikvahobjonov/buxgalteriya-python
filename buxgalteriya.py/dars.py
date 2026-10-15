@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-#  🏫 MAKTAB BUXGALTERIYA — School Admin Dashboard uslubida
+#  🏫 MAKTAB BUXGALTERIYA — School Admin Dashboard (Dribbble uslubi)
 # ============================================================
 import hashlib
 import hmac
 import html
 import io
 import json
+import math
 import re
 import secrets
 import time
@@ -48,7 +49,7 @@ except Exception:
 KENG = {"width": "stretch"} if _v >= (1, 50) else {"use_container_width": True}
 
 # ------------------------------------------------------------
-# DIZAYN (CSS) — School Admin Dashboard (Dribbble) uslubi
+# DIZAYN (CSS) — School Admin Dashboard uslubi
 # ------------------------------------------------------------
 st.markdown("""
 <style>
@@ -60,7 +61,7 @@ st.markdown("""
         color: #0F172A;
     }
 
-    /* ============ SIDEBAR (oq, Dribbble uslubi) ============ */
+    /* ============ SIDEBAR ============ */
     section[data-testid="stSidebar"] {
         background: #FFFFFF;
         border-right: 1px solid #E9EDF5;
@@ -69,7 +70,7 @@ st.markdown("""
     section[data-testid="stSidebar"] .block-container { padding-top: 1.2rem; }
     section[data-testid="stSidebar"] hr { border-color: #E9EDF5; }
 
-    .side-logo { display:flex; align-items:center; gap:11px; padding: 6px 6px 14px; }
+    .side-logo { display:flex; align-items:center; gap:11px; padding: 6px 6px 6px; }
     .side-logo .lg {
         width:44px; height:44px; border-radius:13px; flex-shrink:0;
         background:linear-gradient(135deg,#4F46E5,#8B5CF6);
@@ -80,8 +81,13 @@ st.markdown("""
     .side-logo .tt { font-weight:800; font-size:15.5px; color:#0F172A !important; line-height:1.15; }
     .side-logo .ss { font-size:10.5px; color:#94A3B8 !important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 
-    /* navigatsiya (radio -> menyu) */
-    [data-testid="stSidebar"] div[role="radiogroup"] { gap: 4px !important; }
+    .side-cap {
+        font-size:10px; font-weight:800; letter-spacing:1.2px;
+        color:#94A3B8 !important; text-transform:uppercase;
+        padding: 8px 6px 2px;
+    }
+
+    [data-testid="stSidebar"] div[role="radiogroup"] { gap: 3px !important; }
     [data-testid="stSidebar"] label[data-baseweb="radio"] {
         padding: 9px 13px;
         border-radius: 12px;
@@ -91,6 +97,7 @@ st.markdown("""
         margin: 0;
     }
     [data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child { display: none; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] p { font-size: 13.5px; font-weight: 600; }
     [data-testid="stSidebar"] label[data-baseweb="radio"]:hover { background:#F1F5F9; }
     [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) {
         background: linear-gradient(135deg,#4F46E5,#6366F1);
@@ -101,7 +108,20 @@ st.markdown("""
         color:#fff !important; font-weight:700;
     }
 
-    /* foydalanuvchi kartasi */
+    .mini {
+        background: linear-gradient(135deg,#EEF2FF,#F5F3FF);
+        border: 1px solid #E0E7FF;
+        border-radius: 16px;
+        padding: 12px 14px;
+        margin-top: 10px;
+    }
+    .mini .t { font-size:11px; font-weight:800; color:#4F46E5 !important; letter-spacing:.3px; }
+    .mini .v { font-size:13.5px; font-weight:800; color:#0F172A !important; margin:4px 0 8px; }
+    .mini .s { font-size:10.5px; color:#64748B !important; font-weight:600; margin-top:6px; }
+    .bar { height:7px; background:#E0E7FF; border-radius:99px; overflow:hidden; }
+    .bar > i { display:block; height:100%; border-radius:99px;
+               background:linear-gradient(90deg,#4F46E5,#8B5CF6); }
+
     .user-card {
         background: linear-gradient(135deg,#EEF2FF,#F5F3FF);
         border: 1px solid #E0E7FF;
@@ -117,32 +137,40 @@ st.markdown("""
     .user-card .nm { font-weight:700; font-size:13px; color:#0F172A !important; }
     .user-card .rl { font-size:11px; color:#64748B !important; font-weight:600; }
 
-    /* ============ HEADER / HERO (oq karta) ============ */
-    .hero {
-        background: #FFFFFF;
-        border: 1px solid #E9EDF5;
-        border-radius: 20px;
-        padding: 22px 26px;
-        margin-bottom: 18px;
-        display: flex; align-items: center; justify-content: space-between; gap: 14px;
-        box-shadow: 0 2px 12px rgba(15,23,42,.05);
-        position: relative; overflow: hidden;
+    /* ============ TOPBAR (yuqori header) ============ */
+    .topbar {
+        display:flex; justify-content:space-between; align-items:center; gap:12px;
+        background:#FFFFFF; border:1px solid #E9EDF5;
+        border-radius:18px; padding:14px 20px; margin:4px 0 16px;
+        box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
-    .hero::before {
-        content:''; position:absolute; left:0; top:0; bottom:0; width:5px;
-        background: linear-gradient(180deg,#4F46E5,#8B5CF6);
-    }
-    .hero h1 { margin:0; font-size:23px; font-weight:800; color:#0F172A !important; letter-spacing:-0.3px; }
-    .hero p { margin:4px 0 0; color:#64748B; font-size:13.5px; font-weight:500; }
-    .hero .hero-date {
-        flex-shrink: 0;
+    .topbar h1 { margin:0; font-size:20px; font-weight:800; color:#0F172A !important; letter-spacing:-0.3px; }
+    .topbar p { margin:3px 0 0; color:#64748B; font-size:12.5px; font-weight:500; }
+    .tb-r { display:flex; align-items:center; gap:10px; flex-shrink:0; }
+    .tb-chip {
         background:#EEF2FF; color:#4F46E5 !important;
         border:1px solid #E0E7FF;
-        font-weight:700; font-size:12.5px;
-        padding:8px 14px; border-radius:999px;
+        font-weight:700; font-size:12px;
+        padding:9px 14px; border-radius:12px;
+    }
+    .tb-bell {
+        position:relative; width:40px; height:40px; border-radius:12px;
+        background:#F1F5F9; border:1px solid #E9EDF5;
+        display:flex; align-items:center; justify-content:center; font-size:16px;
+    }
+    .tb-bell .dot {
+        position:absolute; top:9px; right:10px; width:8px; height:8px;
+        border-radius:50%; background:#EF4444; border:2px solid #F1F5F9;
+    }
+    .tb-av {
+        width:40px; height:40px; border-radius:12px;
+        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        color:#fff !important; display:flex; align-items:center; justify-content:center;
+        font-weight:800; font-size:14px;
+        box-shadow:0 6px 14px rgba(79,70,229,.28);
     }
 
-    /* ============ STAT KARTALAR (ikonka kvadrat bilan) ============ */
+    /* ============ STAT KARTALAR ============ */
     .stats-row {
         display:grid;
         grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
@@ -164,6 +192,68 @@ st.markdown("""
     }
     .stat-card .lbl { font-size:11.5px; color:#94A3B8; font-weight:700; letter-spacing:.2px; }
     .stat-card .val { font-size:18px; font-weight:800; color:#0F172A; margin-top:2px; }
+
+    /* ============ OQ KARTALAR (container) ============ */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        background:#FFFFFF;
+        border:1px solid #E9EDF5 !important;
+        border-radius:18px !important;
+        box-shadow:0 2px 10px rgba(15,23,42,.04);
+        padding:16px 18px !important;
+    }
+
+    /* ============ HTML JADVAL (ro'yxat kartalar) ============ */
+    .lcard {
+        background:#fff; border:1px solid #E9EDF5; border-radius:18px;
+        box-shadow:0 2px 10px rgba(15,23,42,.04); overflow:hidden;
+    }
+    .lcard-h {
+        display:flex; justify-content:space-between; align-items:center;
+        padding:14px 18px; border-bottom:1px solid #F1F5F9;
+    }
+    .lcard-h .t { font-weight:800; font-size:14.5px; color:#0F172A; }
+    .lcard-h .n {
+        font-size:11px; font-weight:800; color:#4F46E5;
+        background:#EEF2FF; padding:4px 11px; border-radius:999px;
+    }
+    .lbody { max-height:420px; overflow:auto; }
+    table.ht { width:100%; border-collapse:collapse; font-size:13px; }
+    .ht th {
+        position:sticky; top:0; background:#F8FAFC; color:#64748B;
+        font-size:10.5px; text-transform:uppercase; letter-spacing:.5px;
+        text-align:left; padding:10px 14px; border-bottom:1px solid #E9EDF5;
+        font-weight:800; z-index:1;
+    }
+    .ht td { padding:10px 14px; border-bottom:1px solid #F1F5F9; color:#0F172A; vertical-align:middle; }
+    .ht tr:last-child td { border-bottom:none; }
+    .ht tr:hover td { background:#F8FAFC; }
+    .cell-p { display:flex; align-items:center; gap:10px; font-weight:600; }
+    .sub { font-size:11px; color:#94A3B8; font-weight:500; margin-top:1px; }
+    .num { font-weight:700; white-space:nowrap; }
+    .mut { color:#94A3B8; font-weight:600; font-size:12px; }
+
+    .avatar {
+        display:inline-flex; align-items:center; justify-content:center;
+        border-radius:11px; font-weight:800; flex-shrink:0;
+    }
+    .cls-chip {
+        width:32px; height:32px; border-radius:11px; flex-shrink:0;
+        display:inline-flex; align-items:center; justify-content:center;
+        background:#EEF2FF; font-size:15px;
+    }
+
+    /* ============ PILL BADGE ============ */
+    .pill {
+        display:inline-block; padding:4px 11px; border-radius:999px;
+        font-size:10.5px; font-weight:800; letter-spacing:.3px; white-space:nowrap;
+    }
+    .p-ok   { background:#DCFCE7; color:#15803D; }
+    .p-warn { background:#FEF3C7; color:#B45309; }
+    .p-bad  { background:#FEE2E2; color:#DC2626; }
+    .p-info { background:#EEF2FF; color:#4F46E5; }
+    .p-mut  { background:#F1F5F9; color:#64748B; }
+
+    .dwrap { display:flex; justify-content:center; padding:4px 0; }
 
     /* ============ TUGMALAR ============ */
     .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
@@ -208,25 +298,19 @@ st.markdown("""
         border-radius: 16px;
         overflow: hidden;
         background:#fff;
-        box-shadow: 0 2px 10px rgba(15,23,42,.04);
-    }
-    div[data-testid="stMetric"] {
-        background:#fff; border:1px solid #E9EDF5; border-radius:16px;
-        padding: 14px 18px;
-        box-shadow: 0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stForm"] {
         border: 1px solid #E9EDF5;
-        border-radius: 16px;
+        border-radius: 18px;
         background:#FFFFFF;
         padding: 10px 14px 6px;
-        box-shadow: 0 2px 10px rgba(15,23,42,.04);
+        box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stExpander"] {
         border: 1px solid #E9EDF5 !important;
         border-radius: 16px !important;
         background:#fff;
-        box-shadow: 0 2px 10px rgba(15,23,42,.04);
+        box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stAlert"] { border-radius: 14px; }
 
@@ -247,17 +331,13 @@ st.markdown("""
     h1, h2, h3, h4 { color:#0F172A !important; font-weight:800 !important; }
     hr { border-color:#E9EDF5; }
 
-    div[data-testid="stProgress"] > div { background:#E2E8F0; border-radius:999px; }
-    div[data-testid="stProgress"] > div > div {
-        background: linear-gradient(90deg,#4F46E5,#8B5CF6) !important;
-    }
-
     ::-webkit-scrollbar { width:8px; height:8px; }
     ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:8px; }
     ::-webkit-scrollbar-track { background:transparent; }
+    .lbody::-webkit-scrollbar-thumb { background:#E2E8F0; }
 
     @media (max-width: 640px) {
-        .hero { padding: 16px 16px; border-radius: 16px; flex-direction:column; align-items:flex-start; }
+        .topbar { flex-direction:column; align-items:flex-start; }
         .hero h1 { font-size: 19px; }
         .stat-card .val { font-size: 16px; }
         .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
@@ -288,7 +368,7 @@ def oqi(yol, yangi=False):
     try:
         return fb_get(yol) if yangi else _kesh_oqi(yol)
     except Exception:
-        st.error("☁️ Bulutga ulanib bo‘lmadi. Internetni tekshiring va «🔄 Bulutdan yangilash»ni bosing.")
+        st.error("☁️ Bulutga ulanib bo‘lmadi. Internetni tekshiring va sidebar’dagi «🔄 Yangilash»ni bosing.")
         st.stop()
 
 
@@ -419,16 +499,44 @@ def eslat(matn):
 # ------------------------------------------------------------
 # DIZAYN KOMPONENTLARI
 # ------------------------------------------------------------
-def hero(sarlavha, ostki=""):
-    bugun = datetime.now().strftime("%d.%m.%Y")
-    st.markdown(
-        f"""<div class="hero">
-            <div><h1>{html.escape(sarlavha)}</h1>
-            <p>{html.escape(ostki)}</p></div>
-            <div class="hero-date">📅 {bugun}</div>
-        </div>""",
-        unsafe_allow_html=True
-    )
+R_AV = [("#EEF2FF", "#4F46E5"), ("#ECFDF5", "#059669"), ("#FEF3C7", "#B45309"),
+        ("#FCE7F3", "#DB2777"), ("#E0F2FE", "#0369A1"), ("#EDE9FE", "#6D28D9"),
+        ("#DCFCE7", "#15803D"), ("#FFE4E6", "#E11D48")]
+
+
+def avatar(nom, size=32):
+    nom = str(nom).strip() or "?"
+    q = [s for s in nom.split() if s]
+    ini = ((q[0][0] if q else "?") + (q[1][0] if len(q) > 1 else "")).upper()
+    bg, fg = R_AV[sum(ord(c) for c in nom) % len(R_AV)]
+    fs = max(11, int(size * 0.40))
+    return (f'<span class="avatar" style="width:{size}px;height:{size}px;'
+            f'background:{bg};color:{fg};font-size:{fs}px">{html.escape(ini)}</span>')
+
+
+def pill(matn, stil):
+    return f'<span class="pill {stil}">{html.escape(str(matn))}</span>'
+
+
+def pill_holat(kod):
+    return {"st-paid": "p-ok", "st-partial": "p-warn"}.get(kod, "p-bad")
+
+
+def topbar(sarlavha, ostki=""):
+    ism = str(cfg.get("user", "admin"))
+    q = [s for s in ism.split() if s]
+    ini = (q[0][0] if q else "A").upper()
+    st.markdown(f"""<div class="topbar">
+        <div class="tb-l">
+            <h1>{html.escape(sarlavha)}</h1>
+            <p>{html.escape(ostki)}</p>
+        </div>
+        <div class="tb-r">
+            <div class="tb-chip">📅 {datetime.now().strftime('%d.%m.%Y')}</div>
+            <div class="tb-bell">🔔<span class="dot"></span></div>
+            <div class="tb-av">{html.escape(ini)}</div>
+        </div>
+    </div>""", unsafe_allow_html=True)
 
 
 def stat_cards(kartalar):
@@ -445,6 +553,50 @@ def stat_cards(kartalar):
     st.markdown(h, unsafe_allow_html=True)
 
 
+def list_card(sarlavha, ustunlar, qatorlar, maxh=420, badge=None):
+    if not qatorlar:
+        qatorlar = [[f'<span class="mut">Ma’lumot yo‘q</span>'] + [""] * (len(ustunlar) - 1)]
+    th = "".join(f"<th>{html.escape(u)}</th>" for u in ustunlar)
+    body = ""
+    for q in qatorlar:
+        tds = "".join(f"<td>{c}</td>" for c in q)
+        body += f"<tr>{tds}</tr>"
+    b = f'<span class="n">{html.escape(str(badge))}</span>' if badge else f'<span class="n">{len(qatorlar)} ta</span>'
+    return f"""<div class="lcard">
+        <div class="lcard-h"><span class="t">{html.escape(sarlavha)}</span>{b}</div>
+        <div class="lbody" style="max-height:{maxh}px">
+            <table class="ht"><thead><tr>{th}</tr></thead><tbody>{body}</tbody></table>
+        </div>
+    </div>"""
+
+
+def donut(foiz):
+    foiz = max(0, min(100, int(foiz)))
+    r = 54
+    c = 2 * math.pi * r
+    off = c * (1 - foiz / 100)
+    return f"""<div class="dwrap"><svg width="150" height="150" viewBox="0 0 150 150">
+        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#EEF2FF" stroke-width="15"/>
+        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#4F46E5" stroke-width="15"
+            stroke-linecap="round" stroke-dasharray="{c:.1f}" stroke-dashoffset="{off:.1f}"
+            transform="rotate(-90 75 75)"/>
+        <text x="75" y="72" text-anchor="middle" font-size="27" font-weight="800" fill="#0F172A"
+            font-family="Plus Jakarta Sans, sans-serif">{foiz}%</text>
+        <text x="75" y="94" text-anchor="middle" font-size="10" font-weight="800" fill="#94A3B8"
+            letter-spacing="1" font-family="Plus Jakarta Sans, sans-serif">UNDIRILDI</text>
+    </svg></div>"""
+
+
+def plan_html(oy, yigildi, reja):
+    p = min(int(yigildi / reja * 100), 100) if reja > 0 else 0
+    return f"""<div class="mini">
+        <div class="t">🎯 {html.escape(oy)} REJASI</div>
+        <div class="v">{html.escape(som(yigildi))} / {html.escape(som(reja))}</div>
+        <div class="bar"><i style="width:{p}%"></i></div>
+        <div class="s">{p}% bajarildi</div>
+    </div>"""
+
+
 def oylik_grafik(df, ustunlar, ranglar):
     try:
         import altair as alt
@@ -456,7 +608,7 @@ def oylik_grafik(df, ustunlar, ranglar):
             color=alt.Color("Tur:N", scale=alt.Scale(domain=ustunlar, range=ranglar),
                             legend=alt.Legend(orient="bottom", title=None)),
             tooltip=["Oy", "Tur", "Summa"],
-        ).properties(height=300)
+        ).properties(height=290)
         st.altair_chart(ch, **KENG)
     except Exception:
         st.bar_chart(df.set_index("Oy")[ustunlar])
@@ -606,7 +758,7 @@ ADMIN = st.session_state.roll == "admin"
 # 🏠 DASHBOARD
 # ------------------------------------------------------------
 def sahifa_dashboard():
-    hero("👋 Xush kelibsiz!", f"{cfg.get('orgName', 'Maktab')} — barcha hisoblar bir joyda")
+    topbar("👋 Xush kelibsiz!", f"{cfg.get('orgName', 'Maktab')} — barcha hisoblar bir joyda")
     if st.session_state.get("standart_parol"):
         st.warning("⚠️ Siz standart parol (123) bilan kirdingiz. «⚙️ Sozlamalar»da uni darhol almashtiring!")
     if not ADMIN:
@@ -631,21 +783,30 @@ def sahifa_dashboard():
     if reja > 0:
         joriy_oy = OYLAR[datetime.now().month - 1]
         yigildi = sum(sof(s) - qarz(s) for s in hamma[joriy_oy])
-        st.caption(f"🎯 {joriy_oy} rejasi: {som(yigildi)} / {som(reja)}")
-        st.progress(min(max(yigildi / reja, 0.0), 1.0))
+        st.markdown(plan_html(joriy_oy, yigildi, reja), unsafe_allow_html=True)
 
-    if barcha:
-        grafik_df = pd.DataFrame([{
-            "Oy": oy,
-            "Tushum": sum(num(s.get("price")) for s in m),
-            "Qarz": sum(qarz(s) for s in m)
-        } for oy, m in hamma.items()])
-        st.markdown("#### 📊 Oylar kesimida")
-        oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#4F46E5", "#EF4444"])
+    # --- Grafik + Donut (2 ustun) ---
+    g1, g2 = st.columns([2.4, 1])
+    with g1:
+        with st.container(border=True):
+            st.markdown("#### 📊 Oylar kesimida")
+            if barcha:
+                grafik_df = pd.DataFrame([{
+                    "Oy": oy,
+                    "Tushum": sum(num(s.get("price")) for s in m),
+                    "Qarz": sum(qarz(s) for s in m)
+                } for oy, m in hamma.items()])
+                oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#4F46E5", "#EF4444"])
+            else:
+                st.info("Ma’lumot yo‘q")
+    with g2:
+        with st.container(border=True):
+            st.markdown("#### 🎯 Undirish")
+            st.markdown(donut(foiz), unsafe_allow_html=True)
+            st.caption(f"Yig‘ildi: **{som(jami_sof - jami_q)}** / {som(jami_sof)}")
 
     c1, c2, c3 = st.columns(3)
     with c1:
-        st.markdown("#### 🔴 Eng katta qarzdorlar")
         qd = {}
         for m in hamma.values():
             for s in m:
@@ -654,34 +815,35 @@ def sahifa_dashboard():
                 if q > 0 and nom:
                     qd[nom] = qd.get(nom, 0) + q
         top = sorted(qd.items(), key=lambda x: -x[1])[:5]
-        if top:
-            st.dataframe(
-                pd.DataFrame([{"Ism": n, "Qarz": fmt(q)} for n, q in top]),
-                hide_index=True, **KENG
-            )
-        else:
-            st.success("Qarzdor yo‘q 🎉")
+        rows = [[
+            f'<div class="cell-p">{avatar(n)}<span>{html.escape(n)}</span></div>',
+            f'<span class="num" style="color:#DC2626">{fmt(q)}</span>',
+            pill("QARZ", "p-bad")
+        ] for n, q in top]
+        st.markdown(list_card("🔴 Eng katta qarzdorlar", ["O‘quvchi", "Qarz", "Holat"], rows, 300),
+                    unsafe_allow_html=True)
     with c2:
-        st.markdown("#### 🧾 So‘nggi to‘lovlar")
         tol = royxat(oqi("accounting/payments"))[:5]
-        if tol:
-            st.dataframe(
-                pd.DataFrame([{
-                    "Sana": p.get("date", ""),
-                    "Ism": p.get("name", ""),
-                    "Summa": fmt(p.get("amount"))
-                } for p in tol]),
-                hide_index=True, **KENG
-            )
-        else:
-            st.info("To‘lovlar yo‘q")
+        rows = [[
+            f'''<div class="cell-p">{avatar(p.get("name", "?"))}
+                <span>{html.escape(str(p.get("name", "")))}
+                <div class="sub">{html.escape(str(p.get("note") or p.get("type", "")))}</div></span></div>''',
+            f'<span class="mut">{html.escape(str(p.get("date", "")))}</span>',
+            f'<span class="num" style="color:#15803D">+{fmt(p.get("amount"))}</span>'
+        ] for p in tol]
+        st.markdown(list_card("🧾 So‘nggi to‘lovlar", ["O‘quvchi", "Sana", "Summa"], rows, 300),
+                    unsafe_allow_html=True)
     with c3:
-        st.markdown("#### 📅 Bugungi davomat")
         dav = (st.session_state.data.get("__davomat__") or {}).get(str(date.today())) or {}
         kel = sum(1 for v in dav.values() if v is True)
         kelma = sum(1 for v in dav.values() if v is False)
+        st.markdown("#### 📅 Bugungi davomat")
         if dav:
-            stat_cards([("✅", "Keldi", kel, "#10B981"), ("❌", "Kelmadi", kelma, "#EF4444")])
+            stat_cards([
+                ("✅", "Keldi", kel, "#10B981"),
+                ("❌", "Kelmadi", kelma, "#EF4444"),
+            ])
+            st.success(f"Jami belgilangan: {kel + kelma} ta o‘quvchi")
         else:
             st.info("Bugun hali belgilanmagan")
 
@@ -764,7 +926,7 @@ def oldingi_oydan(oy):
 
 
 def sahifa_hisob():
-    hero("💰 Hisob", "Jadvalni tahrirlang va «Bulutga saqlash»ni bosing")
+    topbar("💰 Hisob", "Jadvalni tahrirlang va «Bulutga saqlash»ni bosing")
     c1, c2 = st.columns(2)
     oy = c1.selectbox("📅 Oy", OYLAR, index=datetime.now().month - 1, key="h_oy")
     mal = oy_ma(oy)
@@ -791,35 +953,36 @@ def sahifa_hisob():
                 st.info("Ko‘chiriladigan yozuv topilmadi" if not n else "Saqlab bo‘lmadi")
 
     mask = (toliq["Sinf"].str.strip() == sinf_f) if sinf_f != "Barchasi" else pd.Series(True, index=toliq.index)
-    tahrir = st.data_editor(
-        toliq[mask],
-        num_rows="dynamic" if ADMIN else "fixed",
-        hide_index=True,
-        disabled=not ADMIN,
-        **KENG,
-        column_config={
-            "Ism": st.column_config.TextColumn("👤 Ism", width="large"),
-            "Narx": st.column_config.NumberColumn("💰 Narx", step=1000, min_value=0),
-            "Chegirma": st.column_config.NumberColumn("🎗 Chegirma", step=1000, min_value=0),
-            "Ovqat": st.column_config.NumberColumn("🍽 Ovqat", step=1000, min_value=0),
-            "To‘langan": st.column_config.NumberColumn("💵 To‘langan", step=1000, min_value=0),
-            "Holat": st.column_config.SelectboxColumn("Holat", options=list(HOLATLAR.values())),
-            "Keldi": st.column_config.CheckboxColumn("✅ Keldi"),
-        },
-        key=f"jadval_{oy}_{sinf_f}_{st.session_state.versiya}"
-    )
-
-    if ADMIN and st.button("💾 Bulutga saqlash", type="primary", **KENG):
-        yangi = tahrir.copy()
-        if sinf_f != "Barchasi":
-            yangi["Sinf"] = yangi["Sinf"].fillna("").replace("", sinf_f)
-        birlashgan = pd.concat([toliq[~mask], yangi], ignore_index=True)
-        if oy_saqla(oy, df_oy(birlashgan)):
-            eslat("✅ Bulutga saqlandi!")
-            st.session_state.versiya += 1
-            st.rerun()
-        else:
-            st.error("⚠️ Bulutga yozib bo‘lmadi!")
+    with st.container(border=True):
+        st.markdown("#### 🗓 Oylik jadval")
+        tahrir = st.data_editor(
+            toliq[mask],
+            num_rows="dynamic" if ADMIN else "fixed",
+            hide_index=True,
+            disabled=not ADMIN,
+            **KENG,
+            column_config={
+                "Ism": st.column_config.TextColumn("👤 Ism", width="large"),
+                "Narx": st.column_config.NumberColumn("💰 Narx", step=1000, min_value=0),
+                "Chegirma": st.column_config.NumberColumn("🎗 Chegirma", step=1000, min_value=0),
+                "Ovqat": st.column_config.NumberColumn("🍽 Ovqat", step=1000, min_value=0),
+                "To‘langan": st.column_config.NumberColumn("💵 To‘langan", step=1000, min_value=0),
+                "Holat": st.column_config.SelectboxColumn("Holat", options=list(HOLATLAR.values())),
+                "Keldi": st.column_config.CheckboxColumn("✅ Keldi"),
+            },
+            key=f"jadval_{oy}_{sinf_f}_{st.session_state.versiya}"
+        )
+        if ADMIN and st.button("💾 Bulutga saqlash", type="primary", **KENG):
+            yangi = tahrir.copy()
+            if sinf_f != "Barchasi":
+                yangi["Sinf"] = yangi["Sinf"].fillna("").replace("", sinf_f)
+            birlashgan = pd.concat([toliq[~mask], yangi], ignore_index=True)
+            if oy_saqla(oy, df_oy(birlashgan)):
+                eslat("✅ Bulutga saqlandi!")
+                st.session_state.versiya += 1
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo‘lmadi!")
 
     joriy = df_oy(tahrir) if len(tahrir) else []
     if joriy:
@@ -846,7 +1009,7 @@ def sahifa_hisob():
 # 📅 KUNLIK DAVOMAT
 # ------------------------------------------------------------
 def sahifa_davomat():
-    hero("📅 Kunlik davomat", "Har kuni kim kelganini belgilang")
+    topbar("📅 Kunlik davomat", "Har kuni kim kelganini belgilang")
     sana_d = st.date_input("Sana", value=date.today())
     sana = str(sana_d)
     bazalar = royxat(oqi("accounting/students"))
@@ -876,17 +1039,20 @@ def sahifa_davomat():
         h = "Keldi" if v is True else "Kelmadi" if v is False else "—"
         rows.append({"Ism": nom, "Sinf": str(b.get("cls") or ""), "Holat": boshl or h})
     df = pd.DataFrame(rows)
-    tahrir = st.data_editor(
-        df, hide_index=True,
-        disabled=["Ism", "Sinf"] if ADMIN else True,
-        **KENG,
-        column_config={
-            "Holat": st.column_config.SelectboxColumn(
-                "Holat", options=["—", "Keldi", "Kelmadi"], required=True
-            )
-        },
-        key=f"dav_{sana}_{st.session_state.versiya}_{boshl}"
-    )
+
+    with st.container(border=True):
+        st.markdown("#### ✅ Davomat jadvali")
+        tahrir = st.data_editor(
+            df, hide_index=True,
+            disabled=["Ism", "Sinf"] if ADMIN else True,
+            **KENG,
+            column_config={
+                "Holat": st.column_config.SelectboxColumn(
+                    "Holat", options=["—", "Keldi", "Kelmadi"], required=True
+                )
+            },
+            key=f"dav_{sana}_{st.session_state.versiya}_{boshl}"
+        )
 
     kel = int((tahrir["Holat"] == "Keldi").sum())
     kelma = int((tahrir["Holat"] == "Kelmadi").sum())
@@ -922,10 +1088,19 @@ def sahifa_davomat():
                     h = hisob.setdefault(nom, [0, 0])
                     h[0 if v is True else 1] += 1
         if hisob:
-            st.dataframe(pd.DataFrame([{
-                "Ism": n, "Keldi": a, "Kelmadi": b,
-                "Davomat %": round(a / (a + b) * 100) if (a + b) else 0
-            } for n, (a, b) in sorted(hisob.items())]), hide_index=True, **KENG)
+            rows = []
+            for n, (a, b) in sorted(hisob.items()):
+                fo = round(a / (a + b) * 100) if (a + b) else 0
+                stil = "p-ok" if fo >= 80 else "p-warn" if fo >= 50 else "p-bad"
+                rows.append([
+                    f'<div class="cell-p">{avatar(n)}<span>{html.escape(n)}</span></div>',
+                    f'<span class="num" style="color:#15803D">{a}</span>',
+                    f'<span class="num" style="color:#DC2626">{b}</span>',
+                    pill(f"{fo}%", stil)
+                ])
+            st.markdown(list_card(f"📆 {oy_nom} davomati",
+                                  ["O‘quvchi", "Keldi", "Kelmadi", "Davomat %"], rows, 400),
+                        unsafe_allow_html=True)
         else:
             st.info("Bu oy uchun davomat yo‘q")
 
@@ -934,7 +1109,7 @@ def sahifa_davomat():
 # 📊 TAQQOSLASH
 # ------------------------------------------------------------
 def sahifa_taqqoslash():
-    hero("📊 Sinflar taqqoslash")
+    topbar("📊 Sinflar taqqoslash", "Sinflar natijalari bir joyda")
     oy = st.selectbox("📅 Oy", OYLAR, index=datetime.now().month - 1, key="t_oy")
     groups = {}
     for s in oy_ma(oy):
@@ -942,15 +1117,31 @@ def sahifa_taqqoslash():
     if not groups:
         st.info("Bu oyda ma’lumot yo‘q")
         return
-    df = pd.DataFrame([{
-        "Sinf": c, "O‘quvchi": len(g),
-        "Tushum": int(sum(num(s.get("price")) for s in g)),
-        "Ovqat": int(sum(num(s.get("food")) for s in g)),
-        "Qarz": int(sum(qarz(s) for s in g)),
-        "Davomat %": round(sum(1 for s in g if s.get("att", True)) / len(g) * 100)
-    } for c, g in sorted(groups.items())])
-    st.dataframe(df, hide_index=True, **KENG)
-    st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#4F46E5", "#EF4444"])
+
+    rows = []
+    df_data = []
+    for c, g in sorted(groups.items()):
+        tushum = int(sum(num(s.get("price")) for s in g))
+        qarz = int(sum(qarz(s) for s in g))
+        fo = round(sum(1 for s in g if s.get("att", True)) / len(g) * 100)
+        df_data.append({"Sinf": c, "O‘quvchi": len(g), "Tushum": tushum,
+                        "Ovqat": int(sum(num(s.get("food")) for s in g)), "Qarz": qarz,
+                        "Davomat %": fo})
+        stil = "p-ok" if fo >= 80 else "p-warn" if fo >= 50 else "p-bad"
+        rows.append([
+            f'<div class="cell-p"><span class="cls-chip">🎓</span>'
+            f'<span>{html.escape(c)}<div class="sub">{len(g)} ta o‘quvchi</div></span></div>',
+            f'<span class="num">{fmt(tushum)}</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(qarz)}</span>',
+            pill(f"{fo}%", stil)
+        ])
+    st.markdown(list_card(f"📊 {oy} — sinflar", ["Sinf", "Tushum", "Qarz", "Davomat %"], rows, 420),
+                unsafe_allow_html=True)
+
+    df = pd.DataFrame(df_data)
+    with st.container(border=True):
+        st.markdown("#### 📈 Grafik")
+        st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#4F46E5", "#EF4444"])
     excel_tugma(df, oy, f"Taqqoslash_{oy}", "xl_taqq")
 
 
@@ -958,19 +1149,19 @@ def sahifa_taqqoslash():
 # 🔴 QARZDORLAR
 # ------------------------------------------------------------
 def sahifa_qarzdorlar():
-    hero("🔴 Qarzdorlar", "Barcha oylar bo‘yicha")
-    rows = [{
+    topbar("🔴 Qarzdorlar", "Barcha oylar bo‘yicha")
+    rows_data = [{
         "Oy": oy, "Ism": str(s.get("name")).strip(),
         "Sinf": (s.get("cls") or "").strip() or "—",
         "Sof": int(sof(s)), "To‘langan": int(num(s.get("paid"))),
         "Qarz": int(qarz(s))
     } for oy in OYLAR for s in oy_ma(oy) if s.get("name") and qarz(s) > 0]
 
-    if not rows:
+    if not rows_data:
         st.success("🎉 Qarzdor yo‘q — hammasi to‘lagan!")
         return
 
-    df = pd.DataFrame(rows)
+    df = pd.DataFrame(rows_data)
     f1, f2, f3 = st.columns(3)
     oylar_f = f1.multiselect("📅 Oylar", OYLAR, default=[], placeholder="Barcha oylar")
     sinf_f = f2.selectbox("🎓 Sinf", ["Barchasi"] + sorted(df["Sinf"].unique()))
@@ -991,15 +1182,30 @@ def sahifa_qarzdorlar():
 
     t1, t2 = st.tabs(["📅 Oylar bo‘yicha", "🧑 O‘quvchilar bo‘yicha"])
     with t1:
-        st.dataframe(
-            df, hide_index=True, **KENG,
-            column_config={"Qarz": st.column_config.NumberColumn(format="%d")}
-        )
+        rows = [[
+            f'<div class="cell-p">{avatar(r.Ism)}<span>{html.escape(r.Ism)}'
+            f'<div class="sub">{html.escape(r.Sinf)}</div></span></div>',
+            pill(r.Oy, "p-info"),
+            f'<span class="num">{fmt(r.Sof)}</span>',
+            f'<span class="num" style="color:#15803D">{fmt(r.To‘langan)}</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r.Qarz)}</span>'
+        ] for r in df.itertuples()]
+        st.markdown(list_card("🔴 Qarzdor yozuvlar",
+                              ["O‘quvchi", "Oy", "Sof", "To‘langan", "Qarz"], rows, 430),
+                    unsafe_allow_html=True)
     with t2:
         gr = (df.groupby("Ism", as_index=False)
               .agg(Sinf=("Sinf", "first"), Oylar=("Oy", "count"), Qarz=("Qarz", "sum"))
               .sort_values("Qarz", ascending=False))
-        st.dataframe(gr, hide_index=True, **KENG)
+        rows = [[
+            f'<div class="cell-p">{avatar(r.Ism)}<span>{html.escape(r.Ism)}'
+            f'<div class="sub">{html.escape(str(r.Sinf))}</div></span></div>',
+            f'<span class="num">{int(r.Oylar)} oy</span>',
+            f'<span class="num" style="color:#DC2626">{fmt(r.Qarz)}</span>'
+        ] for r in gr.itertuples()]
+        st.markdown(list_card("🧑 O‘quvchilar kesimida",
+                              ["O‘quvchi", "Necha oy", "Umumiy qarz"], rows, 430),
+                    unsafe_allow_html=True)
 
     k1, k2 = st.columns(2)
     with k1:
@@ -1017,14 +1223,14 @@ def sahifa_qarzdorlar():
 # 📈 YILLIK
 # ------------------------------------------------------------
 def sahifa_yillik():
-    hero("📈 Yillik hisobot", "12 oy natijalari")
+    topbar("📈 Yillik hisobot", "12 oy natijalari")
     xarajatlar = royxat(oqi("accounting/expenses"))
     yillar = sorted(
         {str(x.get("date", ""))[:4] for x in xarajatlar if str(x.get("date", ""))[:4].isdigit()}
         | {str(date.today().year)}, reverse=True
     )
     yil = st.selectbox("📆 Xarajatlar yili", yillar)
-    rows = []
+    rows_data = []
     for i, oy in enumerate(OYLAR):
         mal = oy_ma(oy)
         tushum = sum(num(s.get("price")) for s in mal)
@@ -1034,16 +1240,37 @@ def sahifa_yillik():
             num(x.get("amount")) for x in xarajatlar
             if str(x.get("date", ""))[:7] == f"{yil}-{i + 1:02d}"
         )
-        rows.append({
+        rows_data.append({
             "Oy": oy, "O‘quvchi": len(mal),
             "Tushum": int(tushum), "Chegirma": int(cheg),
             "Ovqat": int(ovqat), "Xarajat": int(xar),
             "Sof foyda": int(tushum - cheg - ovqat - xar)
         })
-    df = pd.DataFrame(rows)
-    st.dataframe(df, hide_index=True, **KENG)
-    oylik_grafik(df, ["Tushum", "Ovqat", "Xarajat", "Sof foyda"],
-                 ["#4F46E5", "#F59E0B", "#EF4444", "#10B981"])
+    df = pd.DataFrame(rows_data)
+
+    rows = [[
+        pill(r.Oy, "p-info"),
+        f'<span class="num">{int(r.O‘quvchi)}</span>',
+        f'<span class="num">{fmt(r.Tushum)}</span>',
+        f'<span class="num" style="color:#B45309">{fmt(r.Chegirma)}</span>',
+        f'<span class="num" style="color:#DC2626">{fmt(r.Ovqat)}</span>',
+        f'<span class="num" style="color:#DC2626">{fmt(r.Xarajat)}</span>',
+        pill(fmt(r.Sof_foyda) if hasattr(r, "Sof_foyda") else fmt(getattr(r, "_6", 0)),
+             "p-ok" if getattr(r, "_6", r[df.columns[-1]]) >= 0 else "p-bad")
+        if False else
+        (lambda v: pill(fmt(v), "p-ok" if v >= 0 else "p-bad"))(
+            df.iloc[r.Index]["Sof foyda"])
+    ] for r in df.itertuples()]
+    st.markdown(list_card(f"📈 {yil} — oylar kesimi",
+                          ["Oy", "O‘quvchi", "Tushum", "Chegirma", "Ovqat", "Xarajat", "Sof foyda"],
+                          rows, 430),
+                unsafe_allow_html=True)
+
+    with st.container(border=True):
+        st.markdown("#### 📊 Grafik")
+        oylik_grafik(df, ["Tushum", "Ovqat", "Xarajat", "Sof foyda"],
+                     ["#4F46E5", "#F59E0B", "#EF4444", "#10B981"])
+
     stat_cards([
         ("💰", "Yillik tushum", som(df["Tushum"].sum()), "#4F46E5"),
         ("💸", "Xarajat", som(df["Xarajat"].sum()), "#F59E0B"),
@@ -1069,7 +1296,7 @@ def hisobga_yoz(oy, ism, summa):
 
 
 def sahifa_tolovlar():
-    hero("🧾 To‘lovlar jurnali", "To‘lovni yozing — xohlasangiz oylik hisobga ham avtomatik qo‘shiladi")
+    topbar("🧾 To‘lovlar jurnali", "To‘lovni yozing — xohlasangiz oylik hisobga ham avtomatik qo‘shiladi")
     payments = royxat(oqi("accounting/payments"))
     baza_nomlar = sorted({
         str(b.get("name")).strip()
@@ -1127,38 +1354,39 @@ def sahifa_tolovlar():
         ("🧾", "Yozuvlar soni", len(payments), "#F59E0B")
     ])
 
-    df = pd.DataFrame([{
-        "Sana": p.get("date", ""), "Ism": p.get("name", ""),
-        "Summa": num(p.get("amount")), "Turi": p.get("type", TURLAR[0]),
-        "Izoh": p.get("note", "")
-    } for p in payments], columns=["Sana", "Ism", "Summa", "Turi", "Izoh"])
-
-    st.caption("✏️ Qatorni tahrirlash yoki o‘chirish mumkin (o‘chirish: qatorni belgilab Delete).")
-    tahrir = st.data_editor(
-        df, hide_index=True,
-        num_rows="dynamic" if ADMIN else "fixed",
-        disabled=not ADMIN, **KENG,
-        key=f"tolov_ed_{st.session_state.versiya}",
-        column_config={
-            "Summa": st.column_config.NumberColumn(step=10000, min_value=0),
-            "Turi": st.column_config.SelectboxColumn(options=TURLAR)
-        }
-    )
-    if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="tolov_saqla", **KENG):
-        yangi = [{
-            "date": str(r["Sana"] or date.today()),
-            "name": str(r["Ism"]).strip(),
-            "amount": num(r["Summa"]),
-            "type": r["Turi"] if isinstance(r["Turi"], str) else TURLAR[0],
-            "note": "" if pd.isna(r["Izoh"]) else str(r["Izoh"])
-        } for r in tahrir.to_dict("records")
-          if isinstance(r["Ism"], str) and r["Ism"].strip()]
-        if fb_put("accounting/payments", yangi):
-            eslat("✅ Saqlandi!")
-            st.session_state.versiya += 1
-            st.rerun()
-        else:
-            st.error("⚠️ Bulutga yozib bo‘lmadi!")
+    with st.container(border=True):
+        st.markdown("#### 🧾 Jurnal")
+        st.caption("✏️ Qatorni tahrirlash yoki o‘chirish mumkin (o‘chirish: qatorni belgilab Delete).")
+        df = pd.DataFrame([{
+            "Sana": p.get("date", ""), "Ism": p.get("name", ""),
+            "Summa": num(p.get("amount")), "Turi": p.get("type", TURLAR[0]),
+            "Izoh": p.get("note", "")
+        } for p in payments], columns=["Sana", "Ism", "Summa", "Turi", "Izoh"])
+        tahrir = st.data_editor(
+            df, hide_index=True,
+            num_rows="dynamic" if ADMIN else "fixed",
+            disabled=not ADMIN, **KENG,
+            key=f"tolov_ed_{st.session_state.versiya}",
+            column_config={
+                "Summa": st.column_config.NumberColumn(step=10000, min_value=0),
+                "Turi": st.column_config.SelectboxColumn(options=TURLAR)
+            }
+        )
+        if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="tolov_saqla", **KENG):
+            yangi = [{
+                "date": str(r["Sana"] or date.today()),
+                "name": str(r["Ism"]).strip(),
+                "amount": num(r["Summa"]),
+                "type": r["Turi"] if isinstance(r["Turi"], str) else TURLAR[0],
+                "note": "" if pd.isna(r["Izoh"]) else str(r["Izoh"])
+            } for r in tahrir.to_dict("records")
+              if isinstance(r["Ism"], str) and r["Ism"].strip()]
+            if fb_put("accounting/payments", yangi):
+                eslat("✅ Saqlandi!")
+                st.session_state.versiya += 1
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo‘lmadi!")
     excel_tugma(df, "Tolovlar", "Tolovlar", "xl_tolov")
 
 
@@ -1166,7 +1394,7 @@ def sahifa_tolovlar():
 # 💸 XARAJATLAR
 # ------------------------------------------------------------
 def sahifa_xarajatlar():
-    hero("💸 Xarajatlar", "Gaz, svet, suv, ta’mirlash...")
+    topbar("💸 Xarajatlar", "Gaz, svet, suv, ta’mirlash...")
     expenses = royxat(oqi("accounting/expenses"))
     with st.form("xar_forma", clear_on_submit=True):
         c1, c2, c3 = st.columns([2, 1, 1])
@@ -1204,26 +1432,28 @@ def sahifa_xarajatlar():
         "Summa": num(x.get("amount"))
     } for x in expenses], columns=["Sana", "Nima uchun", "Summa"])
 
-    tahrir = st.data_editor(
-        df, hide_index=True,
-        num_rows="dynamic" if ADMIN else "fixed",
-        disabled=not ADMIN, **KENG,
-        key=f"xar_ed_{st.session_state.versiya}",
-        column_config={"Summa": st.column_config.NumberColumn(step=10000, min_value=0)}
-    )
-    if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="xar_saqla", **KENG):
-        yangi = [{
-            "date": str(r["Sana"] or date.today()),
-            "title": str(r["Nima uchun"]).strip(),
-            "amount": num(r["Summa"])
-        } for r in tahrir.to_dict("records")
-          if isinstance(r["Nima uchun"], str) and r["Nima uchun"].strip()]
-        if fb_put("accounting/expenses", yangi):
-            eslat("✅ Saqlandi!")
-            st.session_state.versiya += 1
-            st.rerun()
-        else:
-            st.error("⚠️ Bulutga yozib bo‘lmadi!")
+    with st.container(border=True):
+        st.markdown("#### 🧾 Xarajatlar jurnali")
+        tahrir = st.data_editor(
+            df, hide_index=True,
+            num_rows="dynamic" if ADMIN else "fixed",
+            disabled=not ADMIN, **KENG,
+            key=f"xar_ed_{st.session_state.versiya}",
+            column_config={"Summa": st.column_config.NumberColumn(step=10000, min_value=0)}
+        )
+        if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="xar_saqla", **KENG):
+            yangi = [{
+                "date": str(r["Sana"] or date.today()),
+                "title": str(r["Nima uchun"]).strip(),
+                "amount": num(r["Summa"])
+            } for r in tahrir.to_dict("records")
+              if isinstance(r["Nima uchun"], str) and r["Nima uchun"].strip()]
+            if fb_put("accounting/expenses", yangi):
+                eslat("✅ Saqlandi!")
+                st.session_state.versiya += 1
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo‘lmadi!")
     excel_tugma(df, "Xarajatlar", "Xarajatlar", "xl_xar")
 
 
@@ -1256,7 +1486,7 @@ def df_baza(df):
 
 
 def sahifa_baza():
-    hero("👨‍🎓 O‘quvchilar bazasi", "Bir marta kiritiladi — har oy ishlatiladi")
+    topbar("👨‍🎓 O‘quvchilar bazasi", "Bir marta kiritiladi — har oy ishlatiladi")
     bazalar = royxat(oqi("accounting/students"))
 
     with st.form("baza_forma", clear_on_submit=True):
@@ -1326,20 +1556,23 @@ def sahifa_baza():
         ("👨‍🎓", "Bazadagi o‘quvchilar", len(df), "#4F46E5"),
         ("🎓", "Sinflar soni", df["Sinf"].replace("", pd.NA).nunique(), "#8B5CF6")
     ])
-    tahrir = st.data_editor(
-        df, hide_index=True,
-        num_rows="dynamic" if ADMIN else "fixed",
-        disabled=not ADMIN, **KENG,
-        key=f"baza_ed_{st.session_state.versiya}",
-        column_config={"Narx": st.column_config.NumberColumn(step=10000, min_value=0)}
-    )
-    if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="baza_saqla", **KENG):
-        if fb_put("accounting/students", df_baza(tahrir)):
-            eslat("✅ Saqlandi!")
-            st.session_state.versiya += 1
-            st.rerun()
-        else:
-            st.error("⚠️ Bulutga yozib bo‘lmadi!")
+
+    with st.container(border=True):
+        st.markdown("#### 🗂 Baza jadvali")
+        tahrir = st.data_editor(
+            df, hide_index=True,
+            num_rows="dynamic" if ADMIN else "fixed",
+            disabled=not ADMIN, **KENG,
+            key=f"baza_ed_{st.session_state.versiya}",
+            column_config={"Narx": st.column_config.NumberColumn(step=10000, min_value=0)}
+        )
+        if ADMIN and st.button("💾 O‘zgarishlarni saqlash", key="baza_saqla", **KENG):
+            if fb_put("accounting/students", df_baza(tahrir)):
+                eslat("✅ Saqlandi!")
+                st.session_state.versiya += 1
+                st.rerun()
+            else:
+                st.error("⚠️ Bulutga yozib bo‘lmadi!")
     excel_tugma(df, "Baza", "Oquvchilar_bazasi", "xl_baza")
 
 
@@ -1347,7 +1580,7 @@ def sahifa_baza():
 # ⚙️ SOZLAMALAR
 # ------------------------------------------------------------
 def sahifa_sozlamalar():
-    hero("⚙️ Sozlamalar", "Akkaunt, muassasa va Telegram sozlamalari")
+    topbar("⚙️ Sozlamalar", "Akkaunt, muassasa va Telegram sozlamalari")
     if not ADMIN:
         st.warning("Faqat asosiy admin o‘zgartira oladi!")
         return
@@ -1457,6 +1690,17 @@ with st.sidebar:
         </div>
     </div>""", unsafe_allow_html=True)
 
+    # Mini reja kartasi (Dribbble uslubidagi progress)
+    try:
+        _reja = num(cfg.get("monthlyPlan"))
+        if _reja > 0:
+            _oy = OYLAR[datetime.now().month - 1]
+            _yig = sum(sof(s) - qarz(s) for s in oy_ma(_oy))
+            st.markdown(plan_html(_oy, _yig, _reja), unsafe_allow_html=True)
+    except Exception:
+        pass
+
+    st.markdown('<div class="side-cap">Menyu</div>', unsafe_allow_html=True)
     tanlangan = st.radio("Bo‘lim", list(SAHIFALAR), label_visibility="collapsed", key="nav")
 
     st.markdown("---")
@@ -1469,7 +1713,12 @@ with st.sidebar:
         </div>
     </div>""", unsafe_allow_html=True)
 
-    if st.button("🚪 Chiqish", **KENG):
+    b1, b2 = st.columns(2)
+    if b1.button("🔄", help="Bulutdan yangilash", **{"use_container_width": True} if _v < (1, 50) else {"width": "stretch"}):
+        bulutdan_yukla()
+        st.session_state.versiya += 1
+        st.rerun()
+    if b2.button("🚪 Chiqish", **{"use_container_width": True} if _v < (1, 50) else {"width": "stretch"}):
         st.session_state.clear()
         st.rerun()
 
