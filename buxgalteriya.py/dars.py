@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 # ============================================================
-#  🏫 MAKTAB BUXGALTERIYA — School Admin Dashboard (Dribbble uslubi)
+#  🏫 MAKTAB BUXGALTERIYA — Premium Navy admin panel
 # ============================================================
 import hashlib
 import hmac
@@ -49,59 +49,50 @@ except Exception:
 KENG = {"width": "stretch"} if _v >= (1, 50) else {"use_container_width": True}
 
 # ------------------------------------------------------------
-# DIZAYN (CSS) — School Admin Dashboard uslubi
+# DIZAYN (CSS) — Premium Navy
 # ------------------------------------------------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
-    .stApp {
-        background: #F6F7FB;
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        color: #0F172A;
-    }
+    .stApp { background:#F4F6FA; font-family:'Plus Jakarta Sans',sans-serif; color:#0F172A; }
 
-    /* ============ SIDEBAR ============ */
+    /* ============ SIDEBAR — to'q ko'k navy ============ */
     section[data-testid="stSidebar"] {
-        background: #FFFFFF;
-        border-right: 1px solid #E9EDF5;
+        background: linear-gradient(180deg,#0B1220 0%,#111A30 100%);
+        border-right: 1px solid #1E293B;
     }
-    section[data-testid="stSidebar"] * { color: #334155 !important; }
-    section[data-testid="stSidebar"] .block-container { padding-top: 1.2rem; }
-    section[data-testid="stSidebar"] hr { border-color: #E9EDF5; }
+    section[data-testid="stSidebar"] * { color:#94A3B8 !important; }
+    section[data-testid="stSidebar"] .block-container { padding-top:1.2rem; }
+    section[data-testid="stSidebar"] hr { border-color:#1E293B; }
 
-    .side-logo { display:flex; align-items:center; gap:11px; padding: 6px 6px 6px; }
+    .side-logo { display:flex; align-items:center; gap:11px; padding:6px 6px; }
     .side-logo .lg {
         width:44px; height:44px; border-radius:13px; flex-shrink:0;
-        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        background:linear-gradient(135deg,#3B82F6,#8B5CF6);
         display:flex; align-items:center; justify-content:center;
-        font-size:22px;
-        box-shadow:0 8px 18px rgba(79,70,229,.30);
+        font-size:22px; box-shadow:0 8px 18px rgba(37,99,235,.4);
     }
-    .side-logo .tt { font-weight:800; font-size:15.5px; color:#0F172A !important; line-height:1.15; }
-    .side-logo .ss { font-size:10.5px; color:#94A3B8 !important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
+    .side-logo .tt { font-weight:800; font-size:15.5px; color:#F8FAFC !important; line-height:1.15; }
+    .side-logo .ss { font-size:10.5px; color:#64748B !important; font-weight:700; letter-spacing:.5px; text-transform:uppercase; }
 
-    .side-cap {
-        font-size:10px; font-weight:800; letter-spacing:1.2px;
-        color:#94A3B8 !important; text-transform:uppercase;
-        padding: 8px 6px 2px;
-    }
+    .side-cap { font-size:10px; font-weight:800; letter-spacing:1.2px; color:#475569 !important;
+                text-transform:uppercase; padding:10px 6px 2px; }
 
-    [data-testid="stSidebar"] div[role="radiogroup"] { gap: 3px !important; }
+    [data-testid="stSidebar"] div[role="radiogroup"] { gap:3px !important; }
     [data-testid="stSidebar"] label[data-baseweb="radio"] {
-        padding: 9px 13px;
-        border-radius: 12px;
-        border: 1px solid transparent;
-        transition: .15s;
-        background: transparent;
-        margin: 0;
+        padding:9px 13px; border-radius:12px; border:1px solid transparent;
+        transition:.15s; background:transparent; margin:0;
     }
-    [data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child { display: none; }
-    [data-testid="stSidebar"] label[data-baseweb="radio"] p { font-size: 13.5px; font-weight: 600; }
-    [data-testid="stSidebar"] label[data-baseweb="radio"]:hover { background:#F1F5F9; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] > div:first-child { display:none !important; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] div[data-baseweb="radio"] { display:none !important; }
+    [data-testid="stSidebar"] input[type="radio"] { accent-color:#2563EB; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"] p { font-size:13.5px; font-weight:600; }
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:hover { background:rgba(255,255,255,.06); }
+    [data-testid="stSidebar"] label[data-baseweb="radio"]:hover p { color:#F8FAFC !important; }
     [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) {
-        background: linear-gradient(135deg,#4F46E5,#6366F1);
-        box-shadow: 0 6px 16px rgba(79,70,229,.30);
+        background:linear-gradient(135deg,#2563EB,#4F46E5);
+        box-shadow:0 6px 16px rgba(37,99,235,.4);
     }
     [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) div,
     [data-testid="stSidebar"] label[data-baseweb="radio"]:has(input:checked) p {
@@ -109,53 +100,44 @@ st.markdown("""
     }
 
     .mini {
-        background: linear-gradient(135deg,#EEF2FF,#F5F3FF);
-        border: 1px solid #E0E7FF;
-        border-radius: 16px;
-        padding: 12px 14px;
-        margin-top: 10px;
+        background:rgba(255,255,255,.04); border:1px solid #1E293B;
+        border-radius:16px; padding:12px 14px; margin-top:10px;
     }
-    .mini .t { font-size:11px; font-weight:800; color:#4F46E5 !important; letter-spacing:.3px; }
-    .mini .v { font-size:13.5px; font-weight:800; color:#0F172A !important; margin:4px 0 8px; }
+    .mini .t { font-size:11px; font-weight:800; color:#60A5FA !important; letter-spacing:.3px; }
+    .mini .v { font-size:13.5px; font-weight:800; color:#F1F5F9 !important; margin:4px 0 8px; }
     .mini .s { font-size:10.5px; color:#64748B !important; font-weight:600; margin-top:6px; }
-    .bar { height:7px; background:#E0E7FF; border-radius:99px; overflow:hidden; }
-    .bar > i { display:block; height:100%; border-radius:99px;
-               background:linear-gradient(90deg,#4F46E5,#8B5CF6); }
+    .bar { height:7px; background:#1E293B; border-radius:99px; overflow:hidden; }
+    .bar > i { display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,#3B82F6,#8B5CF6); }
 
     .user-card {
-        background: linear-gradient(135deg,#EEF2FF,#F5F3FF);
-        border: 1px solid #E0E7FF;
-        border-radius: 16px;
-        padding: 12px 14px;
-        display: flex; align-items: center; gap: 10px;
+        background:rgba(255,255,255,.05); border:1px solid #1E293B;
+        border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:10px;
     }
     .user-card .av {
         width:38px; height:38px; border-radius:11px; flex-shrink:0;
-        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        background:linear-gradient(135deg,#3B82F6,#8B5CF6);
         display:flex; align-items:center; justify-content:center; font-size:17px;
     }
-    .user-card .nm { font-weight:700; font-size:13px; color:#0F172A !important; }
+    .user-card .nm { font-weight:700; font-size:13px; color:#F1F5F9 !important; }
     .user-card .rl { font-size:11px; color:#64748B !important; font-weight:600; }
 
-    /* ============ TOPBAR (yuqori header) ============ */
+    /* ============ TOPBAR ============ */
     .topbar {
         display:flex; justify-content:space-between; align-items:center; gap:12px;
-        background:#FFFFFF; border:1px solid #E9EDF5;
+        background:#FFFFFF; border:1px solid #E6EAF2;
         border-radius:18px; padding:14px 20px; margin:4px 0 16px;
         box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
-    .topbar h1 { margin:0; font-size:20px; font-weight:800; color:#0F172A !important; letter-spacing:-0.3px; }
+    .topbar h1 { margin:0; font-size:20px; font-weight:800; color:#0F172A !important; letter-spacing:-.3px; }
     .topbar p { margin:3px 0 0; color:#64748B; font-size:12.5px; font-weight:500; }
     .tb-r { display:flex; align-items:center; gap:10px; flex-shrink:0; }
     .tb-chip {
-        background:#EEF2FF; color:#4F46E5 !important;
-        border:1px solid #E0E7FF;
-        font-weight:700; font-size:12px;
-        padding:9px 14px; border-radius:12px;
+        background:#EFF6FF; color:#2563EB !important; border:1px solid #DBEAFE;
+        font-weight:700; font-size:12px; padding:9px 14px; border-radius:12px;
     }
     .tb-bell {
         position:relative; width:40px; height:40px; border-radius:12px;
-        background:#F1F5F9; border:1px solid #E9EDF5;
+        background:#F1F5F9; border:1px solid #E6EAF2;
         display:flex; align-items:center; justify-content:center; font-size:16px;
     }
     .tb-bell .dot {
@@ -164,66 +146,46 @@ st.markdown("""
     }
     .tb-av {
         width:40px; height:40px; border-radius:12px;
-        background:linear-gradient(135deg,#4F46E5,#8B5CF6);
+        background:linear-gradient(135deg,#3B82F6,#8B5CF6);
         color:#fff !important; display:flex; align-items:center; justify-content:center;
-        font-weight:800; font-size:14px;
-        box-shadow:0 6px 14px rgba(79,70,229,.28);
+        font-weight:800; font-size:14px; box-shadow:0 6px 14px rgba(37,99,235,.3);
     }
 
     /* ============ STAT KARTALAR ============ */
-    .stats-row {
-        display:grid;
-        grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
-        gap:14px; margin:6px 0 18px;
-    }
+    .stats-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr));
+                 gap:14px; margin:6px 0 18px; }
     .stat-card {
-        background:#FFFFFF;
-        border:1px solid #E9EDF5;
-        border-radius:18px;
-        padding:16px;
-        display:flex; align-items:center; gap:12px;
+        background:#FFFFFF; border:1px solid #E6EAF2; border-radius:18px;
+        padding:16px; display:flex; align-items:center; gap:12px;
         box-shadow:0 2px 10px rgba(15,23,42,.04);
-        transition: transform .16s ease, box-shadow .16s ease;
+        transition:transform .16s ease, box-shadow .16s ease;
     }
     .stat-card:hover { transform:translateY(-3px); box-shadow:0 10px 22px rgba(15,23,42,.09); }
-    .stat-ic {
-        width:46px; height:46px; border-radius:14px; flex-shrink:0;
-        display:flex; align-items:center; justify-content:center; font-size:21px;
-    }
+    .stat-ic { width:46px; height:46px; border-radius:14px; flex-shrink:0;
+               display:flex; align-items:center; justify-content:center; font-size:21px; }
     .stat-card .lbl { font-size:11.5px; color:#94A3B8; font-weight:700; letter-spacing:.2px; }
     .stat-card .val { font-size:18px; font-weight:800; color:#0F172A; margin-top:2px; }
 
-    /* ============ OQ KARTALAR (container) ============ */
+    /* ============ OQ KARTALAR ============ */
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        background:#FFFFFF;
-        border:1px solid #E9EDF5 !important;
-        border-radius:18px !important;
-        box-shadow:0 2px 10px rgba(15,23,42,.04);
+        background:#FFFFFF; border:1px solid #E6EAF2 !important;
+        border-radius:18px !important; box-shadow:0 2px 10px rgba(15,23,42,.04);
         padding:16px 18px !important;
     }
 
-    /* ============ HTML JADVAL (ro'yxat kartalar) ============ */
-    .lcard {
-        background:#fff; border:1px solid #E9EDF5; border-radius:18px;
-        box-shadow:0 2px 10px rgba(15,23,42,.04); overflow:hidden;
-    }
-    .lcard-h {
-        display:flex; justify-content:space-between; align-items:center;
-        padding:14px 18px; border-bottom:1px solid #F1F5F9;
-    }
+    /* ============ HTML JADVAL ============ */
+    .lcard { background:#fff; border:1px solid #E6EAF2; border-radius:18px;
+             box-shadow:0 2px 10px rgba(15,23,42,.04); overflow:hidden; }
+    .lcard-h { display:flex; justify-content:space-between; align-items:center;
+               padding:14px 18px; border-bottom:1px solid #F1F5F9; }
     .lcard-h .t { font-weight:800; font-size:14.5px; color:#0F172A; }
-    .lcard-h .n {
-        font-size:11px; font-weight:800; color:#4F46E5;
-        background:#EEF2FF; padding:4px 11px; border-radius:999px;
-    }
+    .lcard-h .n { font-size:11px; font-weight:800; color:#2563EB;
+                  background:#EFF6FF; padding:4px 11px; border-radius:999px; }
     .lbody { max-height:420px; overflow:auto; }
     table.ht { width:100%; border-collapse:collapse; font-size:13px; }
-    .ht th {
-        position:sticky; top:0; background:#F8FAFC; color:#64748B;
-        font-size:10.5px; text-transform:uppercase; letter-spacing:.5px;
-        text-align:left; padding:10px 14px; border-bottom:1px solid #E9EDF5;
-        font-weight:800; z-index:1;
-    }
+    .ht th { position:sticky; top:0; background:#F8FAFC; color:#64748B; font-size:10.5px;
+             text-transform:uppercase; letter-spacing:.5px; text-align:left;
+             padding:10px 14px; border-bottom:1px solid #E6EAF2; font-weight:800; z-index:1; }
     .ht td { padding:10px 14px; border-bottom:1px solid #F1F5F9; color:#0F172A; vertical-align:middle; }
     .ht tr:last-child td { border-bottom:none; }
     .ht tr:hover td { background:#F8FAFC; }
@@ -232,48 +194,37 @@ st.markdown("""
     .num { font-weight:700; white-space:nowrap; }
     .mut { color:#94A3B8; font-weight:600; font-size:12px; }
 
-    .avatar {
-        display:inline-flex; align-items:center; justify-content:center;
-        border-radius:11px; font-weight:800; flex-shrink:0;
-    }
-    .cls-chip {
-        width:32px; height:32px; border-radius:11px; flex-shrink:0;
-        display:inline-flex; align-items:center; justify-content:center;
-        background:#EEF2FF; font-size:15px;
-    }
+    .avatar { display:inline-flex; align-items:center; justify-content:center;
+              border-radius:11px; font-weight:800; flex-shrink:0; }
+    .cls-chip { width:32px; height:32px; border-radius:11px; flex-shrink:0;
+                display:inline-flex; align-items:center; justify-content:center;
+                background:#EFF6FF; font-size:15px; }
 
     /* ============ PILL BADGE ============ */
-    .pill {
-        display:inline-block; padding:4px 11px; border-radius:999px;
-        font-size:10.5px; font-weight:800; letter-spacing:.3px; white-space:nowrap;
-    }
+    .pill { display:inline-block; padding:4px 11px; border-radius:999px;
+            font-size:10.5px; font-weight:800; letter-spacing:.3px; white-space:nowrap; }
     .p-ok   { background:#DCFCE7; color:#15803D; }
     .p-warn { background:#FEF3C7; color:#B45309; }
     .p-bad  { background:#FEE2E2; color:#DC2626; }
-    .p-info { background:#EEF2FF; color:#4F46E5; }
+    .p-info { background:#DBEAFE; color:#1D4ED8; }
     .p-mut  { background:#F1F5F9; color:#64748B; }
 
     .dwrap { display:flex; justify-content:center; padding:4px 0; }
 
     /* ============ TUGMALAR ============ */
     .stButton > button, .stDownloadButton > button, .stFormSubmitButton > button {
-        border-radius: 12px; font-weight: 700;
-        border: 1px solid #E2E8F0;
-        background: #FFFFFF; color: #334155;
-        box-shadow: 0 1px 3px rgba(15,23,42,.05);
-        transition: .16s;
+        border-radius:12px; font-weight:700; border:1px solid #E2E8F0;
+        background:#FFFFFF; color:#334155; box-shadow:0 1px 3px rgba(15,23,42,.05); transition:.16s;
     }
     .stButton > button:hover, .stDownloadButton > button:hover {
-        transform: translateY(-1px);
-        border-color:#C7D2FE; color:#4F46E5;
-        box-shadow: 0 6px 14px rgba(79,70,229,.12);
+        transform:translateY(-1px); border-color:#93C5FD; color:#2563EB;
+        box-shadow:0 6px 14px rgba(37,99,235,.12);
     }
     .stButton > button[kind="primary"],
     .stFormSubmitButton > button[kind="primary"],
     .stFormSubmitButton > button[kind="primaryFormSubmit"] {
-        background: linear-gradient(135deg,#4F46E5,#6D28D9);
-        border: none; color:#fff !important;
-        box-shadow: 0 6px 16px rgba(79,70,229,.30);
+        background:linear-gradient(135deg,#2563EB,#4F46E5); border:none; color:#fff !important;
+        box-shadow:0 6px 16px rgba(37,99,235,.35);
     }
     .stButton > button[kind="primary"]:hover { filter:brightness(1.07); color:#fff !important; }
 
@@ -282,65 +233,59 @@ st.markdown("""
     .stSelectbox div[data-baseweb="select"] > div,
     .stMultiselect div[data-baseweb="select"] > div,
     div[data-baseweb="textarea"] > div {
-        background: #FFFFFF !important;
-        border: 1px solid #E2E8F0 !important;
-        border-radius: 12px !important;
-        color: #0F172A !important;
+        background:#FFFFFF !important; border:1px solid #E2E8F0 !important;
+        border-radius:12px !important; color:#0F172A !important;
     }
     .stTextInput input:focus, .stNumberInput input:focus {
-        border-color:#A5B4FC !important;
-        box-shadow: 0 0 0 3px rgba(99,102,241,.12) !important;
+        border-color:#93C5FD !important; box-shadow:0 0 0 3px rgba(59,130,246,.12) !important;
     }
 
-    /* ============ JADVAL / FORM / EXPANDER ============ */
+    /* ============ FORM / EXPANDER / ALERT ============ */
     div[data-testid="stDataFrame"], div[data-testid="stDataEditor"] {
-        border: 1px solid #E9EDF5;
-        border-radius: 16px;
-        overflow: hidden;
-        background:#fff;
+        border:1px solid #E6EAF2; border-radius:16px; overflow:hidden; background:#fff;
     }
     div[data-testid="stForm"] {
-        border: 1px solid #E9EDF5;
-        border-radius: 18px;
-        background:#FFFFFF;
-        padding: 10px 14px 6px;
-        box-shadow:0 2px 10px rgba(15,23,42,.04);
+        border:1px solid #E6EAF2; border-radius:18px; background:#FFFFFF;
+        padding:10px 14px 6px; box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
     div[data-testid="stExpander"] {
-        border: 1px solid #E9EDF5 !important;
-        border-radius: 16px !important;
-        background:#fff;
-        box-shadow:0 2px 10px rgba(15,23,42,.04);
+        border:1px solid #E6EAF2 !important; border-radius:16px !important;
+        background:#fff; box-shadow:0 2px 10px rgba(15,23,42,.04);
     }
-    div[data-testid="stAlert"] { border-radius: 14px; }
+    div[data-testid="stAlert"] { border-radius:14px; }
 
     /* ============ TABS ============ */
-    .stTabs [data-baseweb="tab-list"] { gap: 6px; }
+    .stTabs [data-baseweb="tab-list"] { gap:6px; }
     .stTabs [data-baseweb="tab"] {
-        border-radius: 12px;
-        background:#EEF1F8;
-        border:1px solid transparent;
-        font-weight:700; padding: 7px 15px; color:#475569;
+        border-radius:12px; background:#EDF1F8; border:1px solid transparent;
+        font-weight:700; padding:7px 15px; color:#475569;
     }
     .stTabs [aria-selected="true"] {
-        background: linear-gradient(135deg,#4F46E5,#6366F1) !important;
-        color:#fff !important;
-        box-shadow: 0 6px 14px rgba(79,70,229,.25);
+        background:linear-gradient(135deg,#2563EB,#4F46E5) !important; color:#fff !important;
+        box-shadow:0 6px 14px rgba(37,99,235,.3);
     }
 
     h1, h2, h3, h4 { color:#0F172A !important; font-weight:800 !important; }
-    hr { border-color:#E9EDF5; }
+    hr { border-color:#E6EAF2; }
 
     ::-webkit-scrollbar { width:8px; height:8px; }
     ::-webkit-scrollbar-thumb { background:#CBD5E1; border-radius:8px; }
     ::-webkit-scrollbar-track { background:transparent; }
     .lbody::-webkit-scrollbar-thumb { background:#E2E8F0; }
 
+    /* ============ MOBIL ============ */
     @media (max-width: 640px) {
-        .topbar { flex-direction:column; align-items:flex-start; }
-        .hero h1 { font-size: 19px; }
-        .stat-card .val { font-size: 16px; }
-        .block-container { padding-left: 0.8rem; padding-right: 0.8rem; }
+        .topbar { flex-direction:column; align-items:flex-start; padding:14px 16px; }
+        .tb-r { width:100%; justify-content:space-between; }
+        .topbar h1 { font-size:17px; }
+        .stats-row { grid-template-columns:repeat(2,1fr); gap:10px; }
+        .stat-card { padding:12px; }
+        .stat-card .val { font-size:15px; }
+        .stat-ic { width:38px; height:38px; font-size:17px; }
+        .block-container { padding:0.7rem 0.7rem 4rem; }
+    }
+    @media (max-width: 768px) {
+        section[data-testid="stSidebar"] { box-shadow:20px 0 60px rgba(2,6,23,.45); }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -368,7 +313,7 @@ def oqi(yol, yangi=False):
     try:
         return fb_get(yol) if yangi else _kesh_oqi(yol)
     except Exception:
-        st.error("☁️ Bulutga ulanib bo‘lmadi. Internetni tekshiring va sidebar’dagi «🔄 Yangilash»ni bosing.")
+        st.error("☁️ Bulutga ulanib bo‘lmadi. Internetni tekshiring va sidebar’dagi «🔄» tugmasini bosing.")
         st.stop()
 
 
@@ -555,7 +500,7 @@ def stat_cards(kartalar):
 
 def list_card(sarlavha, ustunlar, qatorlar, maxh=420, badge=None):
     if not qatorlar:
-        qatorlar = [[f'<span class="mut">Ma’lumot yo‘q</span>'] + [""] * (len(ustunlar) - 1)]
+        qatorlar = [['<span class="mut">Ma’lumot yo‘q</span>'] + [""] * (len(ustunlar) - 1)]
     th = "".join(f"<th>{html.escape(u)}</th>" for u in ustunlar)
     body = ""
     for q in qatorlar:
@@ -576,8 +521,8 @@ def donut(foiz):
     c = 2 * math.pi * r
     off = c * (1 - foiz / 100)
     return f"""<div class="dwrap"><svg width="150" height="150" viewBox="0 0 150 150">
-        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#EEF2FF" stroke-width="15"/>
-        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#4F46E5" stroke-width="15"
+        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#DBEAFE" stroke-width="15"/>
+        <circle cx="75" cy="75" r="{r}" fill="none" stroke="#2563EB" stroke-width="15"
             stroke-linecap="round" stroke-dasharray="{c:.1f}" stroke-dashoffset="{off:.1f}"
             transform="rotate(-90 75 75)"/>
         <text x="75" y="72" text-anchor="middle" font-size="27" font-weight="800" fill="#0F172A"
@@ -720,8 +665,8 @@ def kirish_oynasi():
     st.markdown("""
     <div style="text-align:center; padding:34px 0 16px;">
         <div style="width:74px;height:74px;margin:0 auto 14px;border-radius:20px;
-        background:linear-gradient(135deg,#4F46E5,#8B5CF6);display:flex;align-items:center;
-        justify-content:center;font-size:35px;box-shadow:0 14px 30px rgba(79,70,229,.35);">🏫</div>
+        background:linear-gradient(135deg,#3B82F6,#8B5CF6);display:flex;align-items:center;
+        justify-content:center;font-size:35px;box-shadow:0 14px 30px rgba(37,99,235,.4);">🏫</div>
         <h1 style="margin:0;color:#0F172A;font-size:26px;font-weight:800;">
         Maktab Buxgalteriya</h1>
         <p style="color:#64748B;margin-top:6px;font-weight:500;">Talabalar hisob-kitobi — Admin Panel</p>
@@ -772,7 +717,7 @@ def sahifa_dashboard():
     foiz = round(max(jami_sof - jami_q, 0) / jami_sof * 100) if jami_sof > 0 else 0
 
     stat_cards([
-        ("👥", "O‘quvchi yozuvlari", len(barcha), "#4F46E5"),
+        ("👥", "O‘quvchi yozuvlari", len(barcha), "#2563EB"),
         ("💰", "Umumiy tushum", som(jami_t), "#10B981"),
         ("🔴", "Umumiy qarz", som(jami_q), "#EF4444"),
         ("📈", "Undirish darajasi", f"{foiz}%", "#8B5CF6"),
@@ -785,7 +730,6 @@ def sahifa_dashboard():
         yigildi = sum(sof(s) - qarz(s) for s in hamma[joriy_oy])
         st.markdown(plan_html(joriy_oy, yigildi, reja), unsafe_allow_html=True)
 
-    # --- Grafik + Donut (2 ustun) ---
     g1, g2 = st.columns([2.4, 1])
     with g1:
         with st.container(border=True):
@@ -796,7 +740,7 @@ def sahifa_dashboard():
                     "Tushum": sum(num(s.get("price")) for s in m),
                     "Qarz": sum(qarz(s) for s in m)
                 } for oy, m in hamma.items()])
-                oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#4F46E5", "#EF4444"])
+                oylik_grafik(grafik_df, ["Tushum", "Qarz"], ["#2563EB", "#EF4444"])
             else:
                 st.info("Ma’lumot yo‘q")
     with g2:
@@ -987,7 +931,7 @@ def sahifa_hisob():
     joriy = df_oy(tahrir) if len(tahrir) else []
     if joriy:
         stat_cards([
-            ("💰", "Tushum", fmt(sum(num(s["price"]) for s in joriy)), "#4F46E5"),
+            ("💰", "Tushum", fmt(sum(num(s["price"]) for s in joriy)), "#2563EB"),
             ("🎗", "Chegirma", fmt(sum(num(s["disc"]) for s in joriy)), "#F59E0B"),
             ("🍽", "Ovqat", fmt(sum(num(s["food"]) for s in joriy)), "#EF4444"),
             ("✅", "Sof foyda", fmt(sum(sof(s) for s in joriy)), "#10B981"),
@@ -1141,7 +1085,7 @@ def sahifa_taqqoslash():
     df = pd.DataFrame(df_data)
     with st.container(border=True):
         st.markdown("#### 📈 Grafik")
-        st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#4F46E5", "#EF4444"])
+        st.bar_chart(df.set_index("Sinf")[["Tushum", "Qarz"]], color=["#2563EB", "#EF4444"])
     excel_tugma(df, oy, f"Taqqoslash_{oy}", "xl_taqq")
 
 
@@ -1269,10 +1213,10 @@ def sahifa_yillik():
     with st.container(border=True):
         st.markdown("#### 📊 Grafik")
         oylik_grafik(df, ["Tushum", "Ovqat", "Xarajat", "Sof foyda"],
-                     ["#4F46E5", "#F59E0B", "#EF4444", "#10B981"])
+                     ["#2563EB", "#F59E0B", "#EF4444", "#10B981"])
 
     stat_cards([
-        ("💰", "Yillik tushum", som(df["Tushum"].sum()), "#4F46E5"),
+        ("💰", "Yillik tushum", som(df["Tushum"].sum()), "#2563EB"),
         ("💸", "Xarajat", som(df["Xarajat"].sum()), "#F59E0B"),
         ("🏆", "Sof foyda", som(df["Sof foyda"].sum()), "#10B981")
     ])
@@ -1350,7 +1294,7 @@ def sahifa_tolovlar():
         ("📅", "Shu oy", som(sum(
             num(p.get("amount")) for p in payments
             if str(p.get("date", ""))[:7] == bu_oy
-        )), "#4F46E5"),
+        )), "#2563EB"),
         ("🧾", "Yozuvlar soni", len(payments), "#F59E0B")
     ])
 
@@ -1553,7 +1497,7 @@ def sahifa_baza():
 
     df = baza_df(bazalar)
     stat_cards([
-        ("👨‍🎓", "Bazadagi o‘quvchilar", len(df), "#4F46E5"),
+        ("👨‍🎓", "Bazadagi o‘quvchilar", len(df), "#2563EB"),
         ("🎓", "Sinflar soni", df["Sinf"].replace("", pd.NA).nunique(), "#8B5CF6")
     ])
 
@@ -1690,7 +1634,6 @@ with st.sidebar:
         </div>
     </div>""", unsafe_allow_html=True)
 
-    # Mini reja kartasi (Dribbble uslubidagi progress)
     try:
         _reja = num(cfg.get("monthlyPlan"))
         if _reja > 0:
@@ -1714,11 +1657,11 @@ with st.sidebar:
     </div>""", unsafe_allow_html=True)
 
     b1, b2 = st.columns(2)
-    if b1.button("🔄", help="Bulutdan yangilash", **{"use_container_width": True} if _v < (1, 50) else {"width": "stretch"}):
+    if b1.button("🔄", help="Bulutdan yangilash", **KENG):
         bulutdan_yukla()
         st.session_state.versiya += 1
         st.rerun()
-    if b2.button("🚪 Chiqish", **{"use_container_width": True} if _v < (1, 50) else {"width": "stretch"}):
+    if b2.button("🚪 Chiqish", **KENG):
         st.session_state.clear()
         st.rerun()
 
